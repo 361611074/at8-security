@@ -3,3 +3,7 @@ dist/
 *.zip
 *.tar.gz
 .git/
+# 旧版 1.0.4 项目遗留，不入库
+at8-security/
+nginx增强规则.txt
+审查报告-1.0.4.md
