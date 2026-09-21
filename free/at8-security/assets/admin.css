@@ -1,0 +1,164 @@
+/*
+ * At8 Security — settings screen styles.
+ * Scoped to .at8sec-* so nothing leaks into the rest of the admin.
+ */
+
+.at8sec-wrap {
+	max-width: 960px;
+}
+
+.at8sec-wrap h1 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.at8sec-sub {
+	color: #646970;
+	margin: 4px 0 18px;
+	max-width: 780px;
+}
+
+.at8sec-tabs {
+	margin-bottom: 0;
+}
+
+.at8sec-panel {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-top: 0;
+	padding: 18px 22px 20px;
+}
+
+.at8sec-panel h2 {
+	margin: 0 0 14px;
+	font-size: 15px;
+	border-left: 4px solid #2271b1;
+	padding-left: 10px;
+	line-height: 1.3;
+}
+
+.at8sec-panel h3 {
+	margin: 22px 0 8px;
+	font-size: 13px;
+	color: #2271b1;
+}
+
+.at8sec-hr {
+	border: 0;
+	border-top: 1px solid #f0f0f1;
+	margin: 18px 0;
+}
+
+.at8sec-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 12px;
+	padding: 10px 0;
+	border-bottom: 1px solid #f6f7f7;
+	font-size: 13px;
+}
+
+.at8sec-row:last-of-type {
+	border-bottom: 0;
+}
+
+.at8sec-row strong {
+	min-width: 250px;
+	font-weight: 600;
+}
+
+.at8sec-row-block {
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.at8sec-row-block strong {
+	min-width: 0;
+	margin-bottom: 6px;
+}
+
+.at8sec-row input[type="number"] {
+	width: 100px;
+}
+
+.at8sec-row input[type="text"],
+.at8sec-row input[type="email"] {
+	width: 380px;
+	max-width: 100%;
+}
+
+.at8sec-row textarea {
+	width: 100%;
+	min-height: 78px;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+	line-height: 1.6;
+}
+
+.at8sec-desc {
+	color: #646970;
+	font-size: 12px;
+	flex-basis: 100%;
+	margin: 0;
+	line-height: 1.6;
+}
+
+.at8sec-tips {
+	margin: 8px 0 16px 18px;
+	padding: 0;
+	list-style: disc;
+}
+
+.at8sec-tips li {
+	margin: 6px 0;
+	color: #3c434a;
+	font-size: 13px;
+}
+
+/* Single restrained line about the separately distributed add-on ---------- */
+
+.at8sec-pro-note {
+	margin: 2px 0 12px;
+	padding: 6px 10px;
+	background: #f6f7f7;
+	border-left: 3px solid #dcdcde;
+}
+
+/* Tool blocks ------------------------------------------------------------ */
+
+.at8sec-tool {
+	margin-top: 22px;
+	padding-top: 18px;
+	border-top: 1px solid #f0f0f1;
+}
+
+.at8sec-tool h3 {
+	margin-top: 0;
+	color: #1d2327;
+	font-size: 14px;
+}
+
+.at8sec-tool-form {
+	margin: 10px 0 0;
+}
+
+/* Audit log table -------------------------------------------------------- */
+
+.at8sec-log {
+	margin: 12px 0 4px;
+}
+
+.at8sec-log th {
+	font-weight: 600;
+}
+
+.at8sec-log td {
+	vertical-align: top;
+	font-size: 12.5px;
+}
+
+.at8sec-log td:last-child {
+	word-break: break-word;
+}

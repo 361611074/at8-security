@@ -1,0 +1,29 @@
+/*
+ * At8 Security — styles for the pieces this plugin prints outside the admin
+ * area: the hidden honeypot fields on the login and comment forms, and the
+ * arithmetic challenge on the login form.
+ *
+ * Loaded on the login screen and on the front end only; the settings screen
+ * loads admin.css instead.
+ */
+
+.at8sec-hp {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.at8sec-captcha {
+	margin: 12px 0;
+}
+
+.at8sec-captcha label {
+	display: block;
+	font-size: 13px;
+}
+
+.at8sec-captcha input[type="text"] {
+	margin-top: 6px;
+}

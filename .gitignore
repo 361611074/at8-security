@@ -1,0 +1,5 @@
+dist/
+.backups/
+*.zip
+*.tar.gz
+.git/
