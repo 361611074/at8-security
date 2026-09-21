@@ -1,0 +1,106 @@
+/*
+ * Styles for the licences screen. Scoped to .at8ls-wrap so nothing here can
+ * reach another screen in the admin.
+ */
+
+.at8ls-wrap .at8ls-intro {
+	max-width: 60em;
+	margin-bottom: 1em;
+}
+
+.at8ls-wrap .at8ls-tabs {
+	margin-bottom: 1em;
+}
+
+.at8ls-wrap .at8ls-table {
+	margin-top: 1em;
+}
+
+.at8ls-wrap .at8ls-key {
+	background: #f0f0f1;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 2px 6px;
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+.at8ls-wrap .at8ls-muted {
+	color: #646970;
+	font-size: 12px;
+}
+
+.at8ls-wrap .at8ls-badge {
+	display: inline-block;
+	border-radius: 10px;
+	padding: 1px 10px;
+	font-size: 12px;
+	line-height: 1.7;
+	background: #f0f0f1;
+	color: #3c434a;
+}
+
+.at8ls-wrap .at8ls-badge.at8ls-active {
+	background: #edfaef;
+	color: #1d7a3c;
+}
+
+.at8ls-wrap .at8ls-badge.at8ls-disabled {
+	background: #fcf3e6;
+	color: #8a5300;
+}
+
+.at8ls-wrap .at8ls-badge.at8ls-revoked {
+	background: #fcebea;
+	color: #8a1f16;
+}
+
+.at8ls-wrap .at8ls-actions {
+	white-space: nowrap;
+}
+
+.at8ls-wrap .at8ls-actions form,
+.at8ls-wrap .at8ls-inline-form {
+	display: inline-block;
+	margin: 0 4px 0 0;
+}
+
+.at8ls-wrap .at8ls-actions .button {
+	margin-right: 0;
+}
+
+.at8ls-wrap .at8ls-danger {
+	color: #b32d2e;
+	border-color: #b32d2e;
+}
+
+.at8ls-wrap .at8ls-danger:hover,
+.at8ls-wrap .at8ls-danger:focus {
+	background: #b32d2e;
+	border-color: #b32d2e;
+	color: #fff;
+}
+
+.at8ls-wrap .at8ls-detail td {
+	background: #fbfbfc;
+	padding: 8px 10px;
+}
+
+.at8ls-wrap .at8ls-detail label {
+	margin-right: 4px;
+	color: #646970;
+}
+
+.at8ls-wrap .at8ls-detail input {
+	margin-right: 12px;
+}
+
+.at8ls-wrap .at8ls-form select,
+.at8ls-wrap .at8ls-form input[type="text"],
+.at8ls-wrap .at8ls-form input[type="number"] {
+	max-width: 22em;
+}
+
+.at8ls-wrap .at8ls-form .small-text {
+	max-width: 8em;
+}

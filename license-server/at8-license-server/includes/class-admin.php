@@ -1,0 +1,800 @@
+<?php
+/**
+ * The admin screens: issue keys, watch the sites using them, publish builds.
+ *
+ * @package At8\License
+ */
+
+namespace At8\License;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Menu, forms and tables.
+ */
+class Admin {
+
+	const SLUG     = 'at8-license-server';
+	const ACTION   = 'at8ls_action';
+	const CAP      = 'manage_options';
+	const PAGE_QS  = 'page=' . self::SLUG;
+
+	/**
+	 * Register hooks.
+	 */
+	public function __construct() {
+		add_action( 'admin_menu', array( $this, 'menu' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
+		add_action( 'admin_post_' . self::ACTION, array( $this, 'handle' ) );
+	}
+
+	/**
+	 * Add the menu entry.
+	 *
+	 * @return void
+	 */
+	public function menu() {
+		add_menu_page(
+			__( 'At8 Licences', 'at8-license-server' ),
+			__( 'At8 Licences', 'at8-license-server' ),
+			self::CAP,
+			self::SLUG,
+			array( $this, 'render' ),
+			'dashicons-lock',
+			58
+		);
+	}
+
+	/**
+	 * Load the stylesheet, and only on this plugin's screen.
+	 *
+	 * @param string $hook Current admin page.
+	 * @return void
+	 */
+	public function assets( $hook ) {
+		if ( 'toplevel_page_' . self::SLUG !== $hook ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'at8ls-admin',
+			AT8LS_URL . 'assets/admin.css',
+			array(),
+			AT8LS_VERSION
+		);
+	}
+
+	/**
+	 * Which tab is open.
+	 *
+	 * @return string
+	 */
+	private function tab() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only navigation.
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'licenses';
+
+		return in_array( $tab, array( 'licenses', 'sites', 'release' ), true ) ? $tab : 'licenses';
+	}
+
+	/**
+	 * Base URL of a tab.
+	 *
+	 * @param string $tab Tab slug.
+	 * @return string
+	 */
+	private function tab_url( $tab ) {
+		return add_query_arg(
+			array(
+				'page' => self::SLUG,
+				'tab'  => $tab,
+			),
+			admin_url( 'admin.php' )
+		);
+	}
+
+	/**
+	 * Draw the screen.
+	 *
+	 * @return void
+	 */
+	public function render() {
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_die( esc_html__( 'You are not allowed to manage licences.', 'at8-license-server' ) );
+		}
+
+		$tab = $this->tab();
+
+		?>
+		<div class="wrap at8ls-wrap">
+			<h1><?php esc_html_e( 'At8 Licences', 'at8-license-server' ); ?></h1>
+			<?php
+			$this->notice();
+			$this->schema_check();
+			?>
+			<nav class="nav-tab-wrapper at8ls-tabs">
+				<a class="nav-tab <?php echo 'licenses' === $tab ? 'nav-tab-active' : ''; ?>"
+					href="<?php echo esc_url( $this->tab_url( 'licenses' ) ); ?>">
+					<?php esc_html_e( 'Licence keys', 'at8-license-server' ); ?>
+				</a>
+				<a class="nav-tab <?php echo 'sites' === $tab ? 'nav-tab-active' : ''; ?>"
+					href="<?php echo esc_url( $this->tab_url( 'sites' ) ); ?>">
+					<?php esc_html_e( 'Activated sites', 'at8-license-server' ); ?>
+				</a>
+				<a class="nav-tab <?php echo 'release' === $tab ? 'nav-tab-active' : ''; ?>"
+					href="<?php echo esc_url( $this->tab_url( 'release' ) ); ?>">
+					<?php esc_html_e( 'Releases', 'at8-license-server' ); ?>
+				</a>
+			</nav>
+			<?php
+			if ( 'sites' === $tab ) {
+				$this->sites_tab();
+			} elseif ( 'release' === $tab ) {
+				$this->release_tab();
+			} else {
+				$this->licenses_tab();
+			}
+			?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Confirmation or error message left by the last action.
+	 *
+	 * @return void
+	 */
+	private function notice() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice code.
+		$code = isset( $_GET['at8ls_notice'] ) ? sanitize_key( wp_unslash( $_GET['at8ls_notice'] ) ) : '';
+
+		if ( '' === $code ) {
+			return;
+		}
+
+		$messages = array(
+			'issued'    => array( 'success', __( 'Licence key created.', 'at8-license-server' ) ),
+			'updated'   => array( 'success', __( 'Licence updated.', 'at8-license-server' ) ),
+			'deleted'   => array( 'success', __( 'Licence deleted.', 'at8-license-server' ) ),
+			'released'  => array( 'success', __( 'The site was released from its key.', 'at8-license-server' ) ),
+			'published' => array( 'success', __( 'Release saved.', 'at8-license-server' ) ),
+			'forgot'    => array( 'success', __( 'Release removed. The file was left on disk.', 'at8-license-server' ) ),
+			'failed'    => array( 'error', __( 'That did not work. Please check the values and try again.', 'at8-license-server' ) ),
+		);
+
+		if ( ! isset( $messages[ $code ] ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-%s is-dismissible"><p>%s</p></div>',
+			esc_attr( $messages[ $code ][0] ),
+			esc_html( $messages[ $code ][1] )
+		);
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice detail.
+		if ( 'failed' === $code && isset( $_GET['at8ls_why'] ) ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Recommended -- Escaped on the next line; the sniff cannot follow the nesting.
+			$why = sanitize_text_field( rawurldecode( (string) wp_unslash( $_GET['at8ls_why'] ) ) );
+
+			printf(
+				'<div class="notice notice-error"><p>%s</p></div>',
+				esc_html( $why )
+			);
+		}
+	}
+
+	/**
+	 * Warn — and offer a fix — when the tables are not there.
+	 *
+	 * The tables are created on activation, but a site restored from a partial
+	 * backup can lose them, and the licence endpoint would then answer nothing
+	 * but database errors. Saying so here beats diagnosing it from a customer's
+	 * screen.
+	 *
+	 * @return void
+	 */
+	private function schema_check() {
+		if ( Db::ready() ) {
+			return;
+		}
+		?>
+		<div class="notice notice-error">
+			<p><?php esc_html_e( 'The licence tables are missing, so keys cannot be issued or checked.', 'at8-license-server' ); ?></p>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
+				<input type="hidden" name="at8ls_task" value="repair">
+				<?php wp_nonce_field( self::ACTION . '_repair' ); ?>
+				<p>
+					<button type="submit" class="button button-primary">
+						<?php esc_html_e( 'Create the tables', 'at8-license-server' ); ?>
+					</button>
+				</p>
+			</form>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Tab 1: the keys.
+	 *
+	 * @return void
+	 */
+	private function licenses_tab() {
+		$rows = Keys::all();
+		?>
+		<h2><?php esc_html_e( 'Create a licence key', 'at8-license-server' ); ?></h2>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="at8ls-form">
+			<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
+			<input type="hidden" name="at8ls_task" value="issue">
+			<?php wp_nonce_field( self::ACTION . '_issue' ); ?>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><label for="at8ls-product"><?php esc_html_e( 'Product', 'at8-license-server' ); ?></label></th>
+					<td>
+						<select name="product" id="at8ls-product">
+							<?php foreach ( products() as $slug => $product ) : ?>
+								<option value="<?php echo esc_attr( $slug ); ?>">
+									<?php echo esc_html( $product['label'] ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="at8ls-days"><?php esc_html_e( 'Validity', 'at8-license-server' ); ?></label></th>
+					<td>
+						<input type="number" min="0" step="1" value="0" name="days" id="at8ls-days" class="small-text">
+						<p class="description">
+							<?php esc_html_e( 'Days from now. Leave 0 for a licence with no end date.', 'at8-license-server' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="at8ls-max"><?php esc_html_e( 'Sites allowed', 'at8-license-server' ); ?></label></th>
+					<td>
+						<input type="number" min="0" step="1" value="1" name="max_sites" id="at8ls-max" class="small-text">
+						<p class="description">
+							<?php esc_html_e( '0 means no limit.', 'at8-license-server' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="at8ls-note"><?php esc_html_e( 'Note', 'at8-license-server' ); ?></label></th>
+					<td>
+						<input type="text" name="note" id="at8ls-note" class="regular-text"
+							placeholder="<?php esc_attr_e( 'Who this key was sold to', 'at8-license-server' ); ?>">
+					</td>
+				</tr>
+			</table>
+			<p class="submit">
+				<button type="submit" class="button button-primary">
+					<?php esc_html_e( 'Create key', 'at8-license-server' ); ?>
+				</button>
+			</p>
+		</form>
+
+		<h2><?php esc_html_e( 'Issued keys', 'at8-license-server' ); ?></h2>
+		<?php if ( ! $rows ) : ?>
+			<p><?php esc_html_e( 'No keys yet.', 'at8-license-server' ); ?></p>
+		<?php else : ?>
+			<table class="wp-list-table widefat fixed striped at8ls-table">
+				<thead>
+					<tr>
+						<th scope="col"><?php esc_html_e( 'Key', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Product', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Status', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Expires', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Sites', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Note', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Actions', 'at8-license-server' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+				<?php foreach ( $rows as $row ) : ?>
+					<?php
+					$id    = (int) $row['id'];
+					$used  = Keys::site_count( $id );
+					$max   = (int) $row['max_sites'];
+					$state = (string) $row['status'];
+					?>
+					<tr>
+						<td><code class="at8ls-key"><?php echo esc_html( (string) $row['license_key'] ); ?></code></td>
+						<td><?php echo esc_html( product_label( (string) $row['product'] ) ); ?></td>
+						<td>
+							<span class="at8ls-badge at8ls-<?php echo esc_attr( $state ); ?>">
+								<?php echo esc_html( $this->status_label( $state ) ); ?>
+							</span>
+						</td>
+						<td><?php echo esc_html( expiry_label( (int) $row['expires'] ) ); ?></td>
+						<td>
+							<?php
+							echo esc_html(
+								$max > 0
+									? sprintf( '%1$d / %2$d', $used, $max )
+									: sprintf(
+										/* translators: %d: number of sites using the key. */
+										_n( '%d site', '%d sites', $used, 'at8-license-server' ),
+										$used
+									)
+							);
+							?>
+						</td>
+						<td><?php echo esc_html( (string) $row['note'] ); ?></td>
+						<td class="at8ls-actions">
+							<?php $this->status_button( $id, $state ); ?>
+							<a class="button button-small"
+								href="<?php echo esc_url( $this->tab_url( 'sites' ) ); ?>">
+								<?php esc_html_e( 'Sites', 'at8-license-server' ); ?>
+							</a>
+							<?php $this->delete_button( $id ); ?>
+						</td>
+					</tr>
+					<tr class="at8ls-detail">
+						<td colspan="7">
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="at8ls-inline">
+								<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
+								<input type="hidden" name="at8ls_task" value="update">
+								<input type="hidden" name="id" value="<?php echo esc_attr( (string) $id ); ?>">
+								<?php wp_nonce_field( self::ACTION . '_update_' . $id ); ?>
+								<label for="at8ls-max-<?php echo esc_attr( (string) $id ); ?>">
+									<?php esc_html_e( 'Sites allowed', 'at8-license-server' ); ?>
+								</label>
+								<input type="number" min="0" step="1" class="small-text"
+									id="at8ls-max-<?php echo esc_attr( (string) $id ); ?>"
+									name="max_sites" value="<?php echo esc_attr( (string) $max ); ?>">
+								<label for="at8ls-note-<?php echo esc_attr( (string) $id ); ?>">
+									<?php esc_html_e( 'Note', 'at8-license-server' ); ?>
+								</label>
+								<input type="text" class="regular-text"
+									id="at8ls-note-<?php echo esc_attr( (string) $id ); ?>"
+									name="note" value="<?php echo esc_attr( (string) $row['note'] ); ?>">
+								<button type="submit" class="button button-small">
+									<?php esc_html_e( 'Save', 'at8-license-server' ); ?>
+								</button>
+							</form>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+		<?php
+	}
+
+	/**
+	 * Tab 2: the sites holding keys.
+	 *
+	 * @return void
+	 */
+	private function sites_tab() {
+		$rows = Keys::all_sites();
+		?>
+		<h2><?php esc_html_e( 'Sites using a key', 'at8-license-server' ); ?></h2>
+		<?php if ( ! $rows ) : ?>
+			<p><?php esc_html_e( 'No site has activated a key yet.', 'at8-license-server' ); ?></p>
+		<?php else : ?>
+			<table class="wp-list-table widefat fixed striped at8ls-table">
+				<thead>
+					<tr>
+						<th scope="col"><?php esc_html_e( 'Site', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Key', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Activated', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Last check', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'WordPress / PHP', 'at8-license-server' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Actions', 'at8-license-server' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+				<?php foreach ( $rows as $row ) : ?>
+					<tr>
+						<td>
+							<strong><?php echo esc_html( (string) $row['domain'] ); ?></strong>
+							<?php if ( '' !== (string) $row['last_ip'] ) : ?>
+								<br><span class="at8ls-muted"><?php echo esc_html( (string) $row['last_ip'] ); ?></span>
+							<?php endif; ?>
+						</td>
+						<td><code class="at8ls-key"><?php echo esc_html( (string) $row['license_key'] ); ?></code></td>
+						<td><?php echo esc_html( when( (int) $row['activated_at'] ) ); ?></td>
+						<td><?php echo esc_html( when( (int) $row['last_seen'] ) ); ?></td>
+						<td>
+							<?php
+							echo esc_html(
+								trim(
+									(string) $row['wp_version'] . ( '' !== (string) $row['php_version'] ? ' / ' . (string) $row['php_version'] : '' ),
+									' /'
+								)
+							);
+							?>
+						</td>
+						<td class="at8ls-actions">
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+								<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
+								<input type="hidden" name="at8ls_task" value="unbind">
+								<input type="hidden" name="site_id" value="<?php echo esc_attr( (string) (int) $row['id'] ); ?>">
+								<?php wp_nonce_field( self::ACTION . '_unbind_' . (int) $row['id'] ); ?>
+								<button type="submit" class="button button-small at8ls-danger">
+									<?php esc_html_e( 'Release', 'at8-license-server' ); ?>
+								</button>
+							</form>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+		<?php
+	}
+
+	/**
+	 * Tab 3: what is published to licensed sites.
+	 *
+	 * @return void
+	 */
+	private function release_tab() {
+		$current = Package::get( 'at8-security-pro' );
+		?>
+		<h2><?php esc_html_e( 'Publish a build', 'at8-license-server' ); ?></h2>
+		<p class="description at8ls-intro">
+			<?php esc_html_e( 'Upload the add-on zip and fill in the version. Licensed sites will be offered it on their Plugins screen.', 'at8-license-server' ); ?>
+		</p>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+			enctype="multipart/form-data" class="at8ls-form">
+			<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
+			<input type="hidden" name="at8ls_task" value="publish">
+			<?php wp_nonce_field( self::ACTION . '_publish' ); ?>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><label for="at8ls-rel-product"><?php esc_html_e( 'Product', 'at8-license-server' ); ?></label></th>
+					<td>
+						<select name="product" id="at8ls-rel-product">
+							<?php foreach ( products() as $slug => $product ) : ?>
+								<option value="<?php echo esc_attr( $slug ); ?>">
+									<?php echo esc_html( $product['label'] ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="at8ls-rel-version"><?php esc_html_e( 'Version', 'at8-license-server' ); ?></label></th>
+					<td>
+						<input type="text" name="version" id="at8ls-rel-version" class="small-text"
+							value="<?php echo esc_attr( isset( $current['version'] ) ? (string) $current['version'] : '' ); ?>"
+							placeholder="2.0.0">
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="at8ls-rel-file"><?php esc_html_e( 'Package', 'at8-license-server' ); ?></label></th>
+					<td>
+						<input type="file" name="package" id="at8ls-rel-file" accept=".zip">
+						<p class="description">
+							<?php
+							if ( ! empty( $current['file'] ) ) {
+								printf(
+									/* translators: %s: file name of the published package. */
+									esc_html__( 'Currently published: %s — leave empty to keep it.', 'at8-license-server' ),
+									'<code>' . esc_html( (string) $current['file'] ) . '</code>'
+								);
+							} else {
+								esc_html_e( 'Nothing published yet.', 'at8-license-server' );
+							}
+							?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Requirements', 'at8-license-server' ); ?></th>
+					<td>
+						<label for="at8ls-rel-req"><?php esc_html_e( 'WordPress', 'at8-license-server' ); ?></label>
+						<input type="text" name="requires" id="at8ls-rel-req" class="small-text"
+							value="<?php echo esc_attr( isset( $current['requires'] ) ? (string) $current['requires'] : '6.4' ); ?>">
+						<label for="at8ls-rel-tested"><?php esc_html_e( 'Tested up to', 'at8-license-server' ); ?></label>
+						<input type="text" name="tested" id="at8ls-rel-tested" class="small-text"
+							value="<?php echo esc_attr( isset( $current['tested'] ) ? (string) $current['tested'] : '' ); ?>">
+						<label for="at8ls-rel-php"><?php esc_html_e( 'PHP', 'at8-license-server' ); ?></label>
+						<input type="text" name="requires_php" id="at8ls-rel-php" class="small-text"
+							value="<?php echo esc_attr( isset( $current['requires_php'] ) ? (string) $current['requires_php'] : '7.4' ); ?>">
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="at8ls-rel-changelog"><?php esc_html_e( 'Changelog', 'at8-license-server' ); ?></label></th>
+					<td>
+						<textarea name="changelog" id="at8ls-rel-changelog" rows="8" class="large-text code"><?php
+							echo esc_textarea( isset( $current['changelog'] ) ? (string) $current['changelog'] : '' );
+						?></textarea>
+						<p class="description">
+							<?php esc_html_e( 'Plain text. Shown in the "View version details" popup on licensed sites.', 'at8-license-server' ); ?>
+						</p>
+					</td>
+				</tr>
+			</table>
+			<p class="submit">
+				<button type="submit" class="button button-primary">
+					<?php esc_html_e( 'Save release', 'at8-license-server' ); ?>
+				</button>
+			</p>
+		</form>
+
+		<h2><?php esc_html_e( 'Published builds', 'at8-license-server' ); ?></h2>
+		<table class="wp-list-table widefat fixed striped at8ls-table">
+			<thead>
+				<tr>
+					<th scope="col"><?php esc_html_e( 'Product', 'at8-license-server' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Version', 'at8-license-server' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'File', 'at8-license-server' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Published', 'at8-license-server' ); ?></th>
+					<th scope="col"><?php esc_html_e( 'Actions', 'at8-license-server' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+			<?php foreach ( products() as $slug => $product ) : ?>
+				<?php $release = Package::get( $slug ); ?>
+				<tr>
+					<td><?php echo esc_html( $product['label'] ); ?></td>
+					<td><?php echo esc_html( isset( $release['version'] ) ? (string) $release['version'] : '—' ); ?></td>
+					<td>
+						<?php
+						$file = isset( $release['file'] ) ? (string) $release['file'] : '';
+
+						if ( '' === $file ) {
+							echo '—';
+						} elseif ( '' === Package::path( $slug ) ) {
+							echo '<span class="at8ls-badge at8ls-revoked">' . esc_html__( 'file missing', 'at8-license-server' ) . '</span> ';
+							echo '<code>' . esc_html( $file ) . '</code>';
+						} else {
+							echo '<code>' . esc_html( $file ) . '</code>';
+						}
+						?>
+					</td>
+					<td><?php echo esc_html( when( isset( $release['uploaded_at'] ) ? (int) $release['uploaded_at'] : 0 ) ); ?></td>
+					<td class="at8ls-actions">
+						<?php if ( '' !== $file ) : ?>
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+								<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
+								<input type="hidden" name="at8ls_task" value="forget">
+								<input type="hidden" name="product" value="<?php echo esc_attr( $slug ); ?>">
+								<?php wp_nonce_field( self::ACTION . '_forget_' . $slug ); ?>
+								<button type="submit" class="button button-small at8ls-danger">
+									<?php esc_html_e( 'Unpublish', 'at8-license-server' ); ?>
+								</button>
+							</form>
+						<?php endif; ?>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Label for a licence status.
+	 *
+	 * @param string $status Stored status.
+	 * @return string
+	 */
+	private function status_label( $status ) {
+		switch ( $status ) {
+			case Keys::STATUS_ACTIVE:
+				return __( 'Active', 'at8-license-server' );
+
+			case Keys::STATUS_DISABLED:
+				return __( 'Disabled', 'at8-license-server' );
+
+			case Keys::STATUS_REVOKED:
+				return __( 'Revoked', 'at8-license-server' );
+
+			default:
+				return $status;
+		}
+	}
+
+	/**
+	 * A button that flips a licence between active and disabled.
+	 *
+	 * @param int    $id     Licence id.
+	 * @param string $status Current status.
+	 * @return void
+	 */
+	private function status_button( $id, $status ) {
+		$next  = Keys::STATUS_ACTIVE === $status ? Keys::STATUS_DISABLED : Keys::STATUS_ACTIVE;
+		$label = Keys::STATUS_ACTIVE === $status
+			? __( 'Disable', 'at8-license-server' )
+			: __( 'Enable', 'at8-license-server' );
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="at8ls-inline-form">
+			<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
+			<input type="hidden" name="at8ls_task" value="status">
+			<input type="hidden" name="id" value="<?php echo esc_attr( (string) $id ); ?>">
+			<input type="hidden" name="status" value="<?php echo esc_attr( $next ); ?>">
+			<?php wp_nonce_field( self::ACTION . '_status_' . $id ); ?>
+			<button type="submit" class="button button-small"><?php echo esc_html( $label ); ?></button>
+		</form>
+		<?php
+	}
+
+	/**
+	 * A button that revokes a licence and drops its site bindings.
+	 *
+	 * @param int $id Licence id.
+	 * @return void
+	 */
+	private function delete_button( $id ) {
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="at8ls-inline-form"
+			onsubmit="return confirm('<?php echo esc_js( __( 'Delete this key and release every site using it?', 'at8-license-server' ) ); ?>');">
+			<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
+			<input type="hidden" name="at8ls_task" value="delete">
+			<input type="hidden" name="id" value="<?php echo esc_attr( (string) $id ); ?>">
+			<?php wp_nonce_field( self::ACTION . '_delete_' . $id ); ?>
+			<button type="submit" class="button button-small at8ls-danger">
+				<?php esc_html_e( 'Delete', 'at8-license-server' ); ?>
+			</button>
+		</form>
+		<?php
+	}
+
+	/**
+	 * Handle a submitted form.
+	 *
+	 * @return void
+	 */
+	public function handle() {
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_die( esc_html__( 'You are not allowed to manage licences.', 'at8-license-server' ) );
+		}
+
+		$task = isset( $_POST['at8ls_task'] ) ? sanitize_key( wp_unslash( $_POST['at8ls_task'] ) ) : '';
+		$id   = isset( $_POST['id'] ) ? (int) $_POST['id'] : 0;
+
+		switch ( $task ) {
+			case 'issue':
+				$this->do_issue();
+				break;
+
+			case 'update':
+				check_admin_referer( self::ACTION . '_update_' . $id );
+				Keys::set_max_sites( $id, isset( $_POST['max_sites'] ) ? (int) $_POST['max_sites'] : 0 );
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitize_text_field() runs inside set_note().
+				Keys::set_note( $id, isset( $_POST['note'] ) ? (string) wp_unslash( $_POST['note'] ) : '' );
+				$this->back( 'updated' );
+				break;
+
+			case 'status':
+				check_admin_referer( self::ACTION . '_status_' . $id );
+				Keys::set_status( $id, isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '' );
+				$this->back( 'updated' );
+				break;
+
+			case 'delete':
+				check_admin_referer( self::ACTION . '_delete_' . $id );
+				Keys::delete( $id );
+				$this->back( 'deleted' );
+				break;
+
+			case 'unbind':
+				$site_id = isset( $_POST['site_id'] ) ? (int) $_POST['site_id'] : 0;
+				check_admin_referer( self::ACTION . '_unbind_' . $site_id );
+				Keys::unbind( $site_id );
+				$this->back( 'released', 'sites' );
+				break;
+
+			case 'publish':
+				$this->do_publish();
+				break;
+
+			case 'forget':
+				$product = isset( $_POST['product'] ) ? sanitize_key( wp_unslash( $_POST['product'] ) ) : '';
+				check_admin_referer( self::ACTION . '_forget_' . $product );
+				Package::forget( $product );
+				$this->back( 'forgot', 'release' );
+				break;
+
+			case 'repair':
+				check_admin_referer( self::ACTION . '_repair' );
+				Db::install();
+				$this->back( 'updated' );
+				break;
+
+			default:
+				$this->back( 'failed' );
+		}
+	}
+
+	/**
+	 * Create a key from the form.
+	 *
+	 * @return void
+	 */
+	private function do_issue() {
+		check_admin_referer( self::ACTION . '_issue' );
+
+		$result = Keys::issue(
+			array(
+				'product'   => isset( $_POST['product'] ) ? sanitize_key( wp_unslash( $_POST['product'] ) ) : '',
+				'plan'      => 'lifetime',
+				'days'      => isset( $_POST['days'] ) ? (int) $_POST['days'] : 0,
+				'max_sites' => isset( $_POST['max_sites'] ) ? (int) $_POST['max_sites'] : 1,
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitize_text_field() runs inside issue().
+				'note'      => isset( $_POST['note'] ) ? (string) wp_unslash( $_POST['note'] ) : '',
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			$this->back( 'failed', 'licenses', $result->get_error_message() );
+		}
+
+		$this->back( 'issued' );
+	}
+
+	/**
+	 * Save a release from the form.
+	 *
+	 * @return void
+	 */
+	private function do_publish() {
+		check_admin_referer( self::ACTION . '_publish' );
+
+		$product = isset( $_POST['product'] ) ? sanitize_key( wp_unslash( $_POST['product'] ) ) : '';
+		$version = isset( $_POST['version'] ) ? sanitize_text_field( wp_unslash( $_POST['version'] ) ) : '';
+
+		if ( '' === $product || ! isset( products()[ $product ] ) || '' === $version ) {
+			$this->back( 'failed', 'release', __( 'A product and a version are both required.', 'at8-license-server' ) );
+		}
+
+		$current = Package::get( $product );
+		$file    = isset( $current['file'] ) ? (string) $current['file'] : '';
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passed to wp_handle_upload(), which validates it.
+		$upload = isset( $_FILES['package'] ) ? $_FILES['package'] : array();
+
+		if ( isset( $upload['name'] ) && '' !== (string) $upload['name'] ) {
+			$stored = Package::store_upload( $upload, $product );
+
+			if ( is_wp_error( $stored ) ) {
+				$this->back( 'failed', 'release', $stored->get_error_message() );
+			}
+
+			$file = (string) $stored;
+		}
+
+		Package::save(
+			$product,
+			array(
+				'version'      => $version,
+				'file'         => $file,
+				'changelog'    => isset( $_POST['changelog'] ) ? sanitize_textarea_field( wp_unslash( $_POST['changelog'] ) ) : '',
+				'requires'     => isset( $_POST['requires'] ) ? sanitize_text_field( wp_unslash( $_POST['requires'] ) ) : '',
+				'tested'       => isset( $_POST['tested'] ) ? sanitize_text_field( wp_unslash( $_POST['tested'] ) ) : '',
+				'requires_php' => isset( $_POST['requires_php'] ) ? sanitize_text_field( wp_unslash( $_POST['requires_php'] ) ) : '',
+			)
+		);
+
+		$this->back( 'published', 'release' );
+	}
+
+	/**
+	 * Send the user back to a tab, with a notice code and nothing else.
+	 *
+	 * @param string $notice  Notice code.
+	 * @param string $tab     Tab to return to.
+	 * @param string $message Extra explanation for a failure.
+	 * @return void
+	 */
+	private function back( $notice, $tab = 'licenses', $message = '' ) {
+		$args = array(
+			'page'         => self::SLUG,
+			'tab'          => $tab,
+			'at8ls_notice' => $notice,
+		);
+
+		if ( '' !== $message ) {
+			$args['at8ls_why'] = rawurlencode( $message );
+		}
+
+		wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
+		exit;
+	}
+}
