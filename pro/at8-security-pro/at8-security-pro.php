@@ -3,7 +3,7 @@
  * Plugin Name:       At8 Security Pro
  * Plugin URI:        https://www.at8.fun/
  * Description:       Adds two-factor authentication, a hosted anti-bot challenge and the maintenance tools to At8 Security. Requires the free At8 Security plugin.
- * Version:           2.0.1
+ * Version:           2.0.2
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Tested up to:      7.1
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AT8SEC_PRO_VERSION', '2.0.1' );
+define( 'AT8SEC_PRO_VERSION', '2.0.2' );
 define( 'AT8SEC_PRO_FILE', __FILE__ );
 define( 'AT8SEC_PRO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AT8SEC_PRO_URL', plugin_dir_url( __FILE__ ) );
@@ -80,6 +80,18 @@ require_once AT8SEC_PRO_DIR . 'includes/class-plugin.php';
 
 register_activation_hook( __FILE__, array( 'At8\\Security\\Pro\\Plugin', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'At8\\Security\\Pro\\Plugin', 'deactivate' ) );
+
+/*
+ * Load translations bundled in /languages (and any language pack installed
+ * under wp-content/languages/plugins/). Hooked to init, as recommended since
+ * WordPress 6.7 — loading earlier triggers a doing_it_wrong notice.
+ */
+add_action(
+	'init',
+	static function () {
+		load_plugin_textdomain( 'at8-security-pro', false, dirname( AT8SEC_PRO_BASENAME ) . '/languages' );
+	}
+);
 
 /*
  * Priority 6: the free plugin boots at 5, so by the time this runs its

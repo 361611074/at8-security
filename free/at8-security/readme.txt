@@ -4,7 +4,7 @@ Tags: security, firewall, login, captcha, spam
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -108,6 +108,13 @@ Everything except the two `.htaccess` options, which are Apache-specific. The se
 4. Tools: weak-password check and the audit log.
 
 == Changelog ==
+
+= 2.0.2 =
+Chinese translation and language loading.
+
+* Bundled a Simplified Chinese translation covering the whole admin interface.
+* The interface language now follows the site language set under Settings → General (and each user's personal language choice).
+* The request firewall no longer runs for WP-CLI and plain PHP scripts that bootstrap WordPress (custom cron jobs), which it previously blocked for having no remote address.
 
 = 2.0.1 =
 Fixes around the custom login path.

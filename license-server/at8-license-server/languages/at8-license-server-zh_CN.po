@@ -1,0 +1,320 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: at8-license-server 2.0.2\n"
+"PO-Revision-Date: 2026-09-21 15:30+0800\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: at8 build\n"
+
+msgid "0 means no limit."
+msgstr "0 表示不限制。"
+
+msgid "A product and a version are both required."
+msgstr "产品和版本都必填。"
+
+msgid "Actions"
+msgstr "操作"
+
+msgid "Activated"
+msgstr "已激活"
+
+msgid "Activated sites"
+msgstr "已激活的站点"
+
+msgid "Active"
+msgstr "有效"
+
+msgid "At8 Licences"
+msgstr "At8 授权管理"
+
+msgid ""
+"At8 License Server requires PHP %s or newer. The plugin has been disabled to"
+" keep the site online."
+msgstr "At8 License Server 需要 PHP %s 或更高版本。插件已自动停用，以保证站点正常运行。"
+
+msgid "At8 Security Pro"
+msgstr "At8 Security Pro"
+
+msgid "Changelog"
+msgstr "更新记录"
+
+msgid "Choose a plugin zip to upload."
+msgstr "请选择要上传的插件 zip 包。"
+
+msgid "Choose a product for this licence."
+msgstr "请为该授权选择产品。"
+
+msgid "Create a licence key"
+msgstr "创建授权密钥"
+
+msgid "Create key"
+msgstr "创建密钥"
+
+msgid "Create the tables"
+msgstr "创建数据表"
+
+msgid "Currently published: %s — leave empty to keep it."
+msgstr "当前已发布：%s —— 留空则保持不变。"
+
+msgid "Days from now. Leave 0 for a licence with no end date."
+msgstr "从今天起算的天数。填 0 表示永久有效。"
+
+msgid "Delete"
+msgstr "删除"
+
+msgid "Delete this key and release every site using it?"
+msgstr "删除此密钥并解绑所有使用它的站点？"
+
+msgid "Disable"
+msgstr "停用"
+
+msgid "Disabled"
+msgstr "已停用"
+
+msgid "Download failed"
+msgstr "下载失败"
+
+msgid "Download link expired"
+msgstr "下载链接已过期"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Expires"
+msgstr "到期时间"
+
+msgid "File"
+msgstr "文件"
+
+msgid "Hostname of the site making the call."
+msgstr "发起请求的站点域名。"
+
+msgid "Issued keys"
+msgstr "已签发的密钥"
+
+msgid "Key"
+msgstr "密钥"
+
+msgid "Last check"
+msgstr "上次校验"
+
+msgid "Licence active."
+msgstr "授权已启用。"
+
+msgid "Licence deleted."
+msgstr "授权已删除。"
+
+msgid "Licence key created."
+msgstr "授权密钥已创建。"
+
+msgid "Licence keys"
+msgstr "授权密钥"
+
+msgid "Licence updated."
+msgstr "授权已更新。"
+
+msgid "Lifetime"
+msgstr "终身"
+
+msgid "No build has been published for this product yet."
+msgstr "该产品还没有发布过任何版本。"
+
+msgid "No keys yet."
+msgstr "还没有密钥。"
+
+msgid "No licence key was sent."
+msgstr "未提供授权密钥。"
+
+msgid "No site domain was sent."
+msgstr "未提供站点域名。"
+
+msgid "No site has activated a key yet."
+msgstr "还没有站点激活过密钥。"
+
+msgid "Note"
+msgstr "备注"
+
+msgid "Nothing published yet."
+msgstr "还没有发布过。"
+
+msgid "Nothing to release."
+msgstr "没有可解绑的对象。"
+
+msgid "PHP"
+msgstr "PHP"
+
+msgid "Package"
+msgstr "安装包"
+
+msgid "Package missing"
+msgstr "安装包缺失"
+
+msgid "Plain text. Shown in the \"View version details\" popup on licensed sites."
+msgstr "纯文本。显示在已授权站点「查看版本详情」弹窗中。"
+
+msgid "Product"
+msgstr "产品"
+
+msgid "Product slug the key is for."
+msgstr "密钥对应的产品标识。"
+
+msgid "Publish a build"
+msgstr "发布新版本"
+
+msgid "Published"
+msgstr "已发布"
+
+msgid "Published builds"
+msgstr "已发布的版本"
+
+msgid "Release"
+msgstr "解绑"
+
+msgid "Release removed. The file was left on disk."
+msgstr "发布已下架，文件仍保留在服务器磁盘上。"
+
+msgid "Release saved."
+msgstr "发布已保存。"
+
+msgid "Released. The key can now be used on another site."
+msgstr "已解绑。密钥现在可以绑定其他站点。"
+
+msgid "Releases"
+msgstr "版本发布"
+
+msgid "Requirements"
+msgstr "环境要求"
+
+msgid "Revoked"
+msgstr "已吊销"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Save release"
+msgstr "保存发布"
+
+msgid "Signed download token."
+msgstr "带签名的下载令牌。"
+
+msgid "Site"
+msgstr "站点"
+
+msgid "Sites"
+msgstr "站点"
+
+msgid "Sites allowed"
+msgstr "允许绑定的站点数"
+
+msgid "Sites using a key"
+msgstr "使用该密钥的站点"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Tested up to"
+msgstr "兼容至"
+
+msgid "That did not work. Please check the values and try again."
+msgstr "操作未成功，请检查填写内容后重试。"
+
+msgid "The file system could not be reached."
+msgstr "无法访问文件系统。"
+
+msgid "The licence could not be stored."
+msgstr "授权信息保存失败。"
+
+msgid "The licence key."
+msgstr "授权密钥。"
+
+msgid "The licence tables are missing, so keys cannot be issued or checked."
+msgstr "授权数据表缺失，无法签发或校验密钥。"
+
+msgid "The package could not be read."
+msgstr "安装包无法读取。"
+
+msgid "The package has to be a .zip file."
+msgstr "安装包必须是 .zip 文件。"
+
+msgid "The package is not available."
+msgstr "安装包不可用。"
+
+msgid "The packages directory could not be created."
+msgstr "安装包目录创建失败。"
+
+msgid "The published package is missing from the server."
+msgstr "已发布的安装包在服务器上丢失。"
+
+msgid "The site was released from its key."
+msgstr "该站点已从密钥中解绑。"
+
+msgid "The upload failed."
+msgstr "上传失败。"
+
+msgid "The uploaded package could not be stored."
+msgstr "上传的安装包保存失败。"
+
+msgid "This download link is not valid any more."
+msgstr "此下载链接已失效。"
+
+msgid ""
+"This key is already active on %1$d site(s). Release it there first, or ask "
+"for the allowance to be raised."
+msgstr "此密钥已绑定 %1$d 个站点。请先解绑，或申请提高站点数量上限。"
+
+msgid "This licence key belongs to a different product."
+msgstr "此授权密钥属于其他产品。"
+
+msgid "This licence key has been disabled."
+msgstr "此授权密钥已被停用。"
+
+msgid "This licence key has been revoked."
+msgstr "此授权密钥已被吊销。"
+
+msgid "This licence key has expired."
+msgstr "此授权密钥已过期。"
+
+msgid "This licence key is not recognised."
+msgstr "此授权密钥无法识别。"
+
+msgid "This site is not activated with this key."
+msgstr "此站点未使用该密钥激活。"
+
+msgid "Too many attempts. Please try again later."
+msgstr "尝试次数过多，请稍后再试。"
+
+msgid "Unknown product"
+msgstr "未知产品"
+
+msgid "Unpublish"
+msgstr "下架"
+
+msgid ""
+"Upload the add-on zip and fill in the version. Licensed sites will be "
+"offered it on their Plugins screen."
+msgstr "上传附加组件 zip 包并填写版本号。已授权的站点会在「插件」页面收到更新推送。"
+
+msgid "Validity"
+msgstr "有效期"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "Who this key was sold to"
+msgstr "密钥售予对象"
+
+msgid "WordPress"
+msgstr "WordPress"
+
+msgid "WordPress / PHP"
+msgstr "WordPress / PHP"
+
+msgid "You are not allowed to manage licences."
+msgstr "你没有权限管理授权。"
+
+msgid "file missing"
+msgstr "文件缺失"

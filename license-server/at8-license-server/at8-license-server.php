@@ -3,7 +3,7 @@
  * Plugin Name:       At8 License Server
  * Plugin URI:        https://www.at8.fun/
  * Description:       Issues and validates licence keys for the add-ons sold from this site, and serves their update packages.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Tested up to:      7.1
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AT8LS_VERSION', '1.0.0' );
+define( 'AT8LS_VERSION', '1.0.1' );
 define( 'AT8LS_FILE', __FILE__ );
 define( 'AT8LS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AT8LS_URL', plugin_dir_url( __FILE__ ) );
@@ -64,5 +64,17 @@ require_once AT8LS_DIR . 'includes/class-plugin.php';
 
 register_activation_hook( __FILE__, array( 'At8\\License\\Plugin', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'At8\\License\\Plugin', 'deactivate' ) );
+
+/*
+ * Load translations bundled in /languages (and any language pack installed
+ * under wp-content/languages/plugins/). Hooked to init, as recommended since
+ * WordPress 6.7 — loading earlier triggers a doing_it_wrong notice.
+ */
+add_action(
+	'init',
+	static function () {
+		load_plugin_textdomain( 'at8-license-server', false, dirname( AT8LS_BASENAME ) . '/languages' );
+	}
+);
 
 add_action( 'plugins_loaded', array( 'At8\\License\\Plugin', 'instance' ), 10 );

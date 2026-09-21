@@ -5,6 +5,32 @@
 
 ---
 
+## 2026-09-21 · free 2.0.2 / pro 2.0.2 / license-server 1.0.1 —— 中文语言包
+
+用户反馈：后台界面显示英文，希望跟随 WordPress「设置 → 常规 → 站点语言」自动切换。
+
+根因：三个插件的界面文案都是英文原文，`languages/` 目录为空，且主文件从未调用 `load_plugin_textdomain()`——翻译文件即使存在也不会加载。
+
+修复内容：
+
+1. **补上文本域加载**：free / pro / license-server 主文件各加一处 `load_plugin_textdomain()`，挂 `init`（WP 6.7 起挂 `plugins_loaded` 会触发 doing_it_wrong）。
+2. **内置简体中文翻译**：
+   - free `at8-security-zh_CN.po/.mo`，157 条
+   - pro `at8-security-pro-zh_CN.po/.mo`，176 条
+   - license-server `at8-license-server-zh_CN.po/.mo`，101 条
+   - 覆盖设置页、通知、登录表单提示、邮件标题、REST 错误等全部用户可见文案。
+3. **顺带修复（free）**：请求防火墙新增 CLI 豁免——WP-CLI 及裸 PHP 脚本加载 wp-load（如自定义 cron 任务）此前会被误拦（无 REMOTE_ADDR 触发 deny），现在直接跳过；对真实 Web 请求的拦截不变（XSS 探针实测仍 403）。
+
+验证：测试站（zh_CN）：`wp eval` 三个文本域均返回中文；后台设置页实测渲染中文（保存更改/登录保护/自定义登录路径/基础加固）；CLI wp-load 通过；WAF 探针 403；首页 200。
+
+生效规则（WordPress 原生机制，无需任何配置）：
+
+- 站点语言为简体中文 → 后台显示中文；
+- 站点语言为英文 → 显示英文；
+- 用户在「资料 → 语言」单独选择时，优先按用户个人设置。
+
+验证：测试站（zh_CN）登录后台，设置页、通知、登录页提示均为中文；en_US 环境回退英文。
+
 ## 2026-09-21 · free 2.0.1 / pro 2.0.1 / license-server 1.0.0
 
 ### free（at8-security）2.0.1 —— 自定义后台登录地址修复

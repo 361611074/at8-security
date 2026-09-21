@@ -5,7 +5,7 @@ Author URI: https://www.at8.fun/
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -81,6 +81,9 @@ always a way in that does not involve the authenticator app.
 No. It reports what differs and leaves the decision to you.
 
 == Changelog ==
+
+= 2.0.2 =
+* Bundled a Simplified Chinese translation. The interface language now follows the site language and each user's personal language choice.
 
 = 2.0.0 =
 * First release of the add-on.

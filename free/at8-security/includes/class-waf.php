@@ -80,6 +80,19 @@ class WAF {
 	 * @return void
 	 */
 	public function inspect_request() {
+		/*
+		 * WP-CLI and plain PHP scripts that bootstrap WordPress (custom cron
+		 * jobs, import tools) are not web requests: they have no remote
+		 * address to judge and no headers to filter, so every check below
+		 * would misfire. Skipping them keeps `wp` and `php script.php` usable.
+		 */
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return;
+		}
+		if ( ! isset( $_SERVER['REMOTE_ADDR'] ) || '' === $_SERVER['REMOTE_ADDR'] ) {
+			return;
+		}
+
 		// The admin area is behind authentication and is not the target of
 		// this layer; scanning it would only interfere with legitimate work.
 		if ( is_admin() ) {

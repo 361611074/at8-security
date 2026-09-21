@@ -1,0 +1,652 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: at8-security-pro 2.0.2\n"
+"PO-Revision-Date: 2026-09-21 15:30+0800\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: at8 build\n"
+
+msgid "%1$s files, recorded %2$s."
+msgstr "%1$s 个文件，记录于 %2$s。"
+
+msgid ""
+"%1$s of %2$s files recorded. Press the button again and it will carry on "
+"from where it stopped — nothing already recorded is read twice."
+msgstr "已记录 %1$s / %2$s 个文件。再按一次按钮将从上次停止处继续——已记录的文件不会重复读取。"
+
+msgid ""
+"%1$s of %2$s files. This site has more files than one run reads, so press "
+"the button again to carry on — it resumes rather than starting over."
+msgstr "%1$s / %2$s 个文件。本站文件数超过单次读取上限，再按一次按钮即可继续——会从断点续扫，不会从头开始。"
+
+msgid ""
+"A fingerprint of every core, plugin and theme file is recorded while the "
+"site is known good. Comparing against it shows what has changed since. "
+"Nothing is ever deleted or changed by this: it reports, and you decide."
+msgstr ""
+"在站点确认无恙时，记录核心、插件和主题每个文件的指纹。之后比对即可看出哪些文件发生了变化。此功能不会删除或改动任何文件：只负责报告，决定权在你。"
+
+msgid ""
+"A partial baseline cannot be compared with. Every file it has not reached "
+"would look like a file that has been deleted, so comparing is held back "
+"until the baseline is complete."
+msgstr "不完整的基准无法用于比对。尚未扫描到的文件都会被误判为「已被删除」，因此基准未完成前比对功能暂不可用。"
+
+msgid "Account"
+msgstr "账号"
+
+msgid "Account name"
+msgstr "账号名称"
+
+msgid ""
+"Accounts not used for %1$s days or more, out of %2$s on this site. Nothing "
+"is changed automatically: a quiet account may be one you use twice a year, "
+"and only you know which."
+msgstr "本站共 %2$s 个账号，其中 %1$s 天以上未使用的如下。不会自动做任何处理：长期不用的账号可能只是半年才用一次的，只有你自己知道。"
+
+msgid "Activate"
+msgstr "启用"
+
+msgid "Activate it"
+msgstr "去启用"
+
+msgid "Active — lifetime licence."
+msgstr "已激活——终身授权。"
+
+msgid "Active."
+msgstr "已激活。"
+
+msgid ""
+"Add this key to your authenticator app — choose \"enter a setup key\" and "
+"type it exactly as shown. Then enter the six-digit code the app produces to "
+"prove the key was entered correctly."
+msgstr "将此密钥添加到你的验证器应用——选择「输入设置密钥」，并原样输入上方内容。然后输入应用生成的 6 位数字，以证明密钥填写正确。"
+
+msgid "Address detection"
+msgstr "地址识别"
+
+msgid "Anti-bot challenge"
+msgstr "人机验证"
+
+msgid "Arrived through %s."
+msgstr "经由 %s 到达。"
+
+msgid "At8 Security Pro"
+msgstr "At8 Security Pro"
+
+msgid "At8 Security Pro needs the free At8 Security plugin."
+msgstr "At8 Security Pro 需要免费版 At8 Security 插件。"
+
+msgid ""
+"At8 Security Pro requires PHP %s or newer. The add-on has been disabled to "
+"keep your site online."
+msgstr "At8 Security Pro 需要 PHP %s 或更高版本。附加组件已自动停用，以保证站点正常运行。"
+
+msgid "Authenticator code"
+msgstr "验证器代码"
+
+msgid "Baseline"
+msgstr "基准"
+
+msgid "Baseline recorded: %s files."
+msgstr "基准已记录：%s 个文件。"
+
+msgid "Begin setup"
+msgstr "开始设置"
+
+msgid ""
+"Behind a CDN or a reverse proxy every request arrives from the same few "
+"addresses, so the rate limiter would count every visitor in the world as one"
+" person. Switching this on lets the plugin work out which network is in "
+"front of the site and read the visitor address from the header that network "
+"controls."
+msgstr ""
+"站点位于 CDN "
+"或反向代理之后时，所有请求都来自相同的少数几个地址，限流会把全世界访客当成同一个人。开启后插件会自动识别前置网络，并从该网络控制的请求头中读取访客真实地址。"
+
+msgid ""
+"Both keys are needed. Until they are filled in, the built-in arithmetic "
+"question stays in place rather than the form going without a check."
+msgstr "两把密钥都必填。填写完成前，登录表单继续使用内置算术题，不会完全没有验证。"
+
+msgid "Build again"
+msgstr "重新构建"
+
+msgid "Build baseline"
+msgstr "构建基准"
+
+msgid "Carry on"
+msgstr "继续"
+
+msgid "Carry on recording the baseline?"
+msgstr "继续记录基准？"
+
+msgid ""
+"Changes under Plugins or Themes usually mean an update was installed — check"
+" the plugin list against what you last installed before reading anything "
+"into them. Changes under WordPress core are only expected after a core "
+"update. A file that appeared in a folder that nothing writes to is the one "
+"worth opening."
+msgstr ""
+"「插件」或「主题」下的变动通常只是安装了更新——先对照最近装过什么，再下结论。「WordPress "
+"核心」下的变动只有核心更新后才属正常。真正值得点开查看的，是出现在无人写入目录中的新增文件。"
+
+msgid "Check now"
+msgstr "立即检查"
+
+msgid "Compare now"
+msgstr "立即比对"
+
+msgid "Comparison finished: %1$s appeared, %2$s differ, %3$s have gone."
+msgstr "比对完成：新增 %1$s 个，内容有差异 %2$s 个，已消失 %3$s 个。"
+
+msgid "Continues from where the last run stopped."
+msgstr "从上次停止处继续。"
+
+msgid "Could not reach the licence server on the last check."
+msgstr "上次检查无法连接授权服务器。"
+
+msgid "Count an account as inactive after (days)"
+msgstr "账号多少天未使用视为闲置（天）"
+
+msgid "Days"
+msgstr "天"
+
+msgid "Delete baseline"
+msgstr "删除基准"
+
+msgid "Detect CDN and proxy address ranges automatically"
+msgstr "自动识别 CDN 与代理地址段"
+
+msgid "Detection"
+msgstr "识别"
+
+msgid ""
+"Development mode is on in wp-config.php: no licence is checked here, and the"
+" features run regardless of the key."
+msgstr "wp-config.php 中开发模式已开启：此站点不检查授权，功能与密钥状态无关地正常运行。"
+
+msgid "Development mode — no licence is checked on this install."
+msgstr "开发模式——本站不检查授权。"
+
+msgid "Do this when you are satisfied the site is clean."
+msgstr "确认站点干净之后再执行。"
+
+msgid ""
+"Each person sets this up on their own profile screen; nothing here forces it"
+" on an account that has not been set up. The roles chosen below are the ones"
+" this site asks to use it — the account holder sees a reminder until they "
+"do."
+msgstr ""
+"每个人在各自的资料页自行设置；这里不会强制任何未设置的账号启用。下方选择的角色是站点「建议启用」的对象——账号持有人会一直看到提醒，直到完成设置。"
+
+msgid "Enter a licence key first."
+msgstr "请先填写授权密钥。"
+
+msgid "Every file matches the baseline."
+msgstr "所有文件与基准一致。"
+
+msgid "Expired."
+msgstr "已过期。"
+
+msgid "File integrity"
+msgstr "文件完整性"
+
+msgid "Files that appeared"
+msgstr "新增的文件"
+
+msgid "Files that have gone"
+msgstr "消失的文件"
+
+msgid "Files whose contents differ"
+msgstr "内容有差异的文件"
+
+msgid "Finish setup"
+msgstr "完成设置"
+
+msgid "Forget this browser"
+msgstr "取消信任此浏览器"
+
+msgid "From the Turnstile section of your Cloudflare account."
+msgstr "来自你 Cloudflare 账户的 Turnstile 版块。"
+
+msgid "How many"
+msgstr "数量"
+
+msgid "Inactive accounts"
+msgstr "闲置账号"
+
+msgid "Issue a new set before you need one."
+msgstr "在需要之前先换发一组新的。"
+
+msgid "Issue a new set of recovery codes"
+msgstr "换发一组新的恢复代码"
+
+msgid "It is installed but not active, so none of these features are running."
+msgstr "已安装但未启用，因此这些功能都没有运行。"
+
+msgid "It is not installed, so none of these features are running."
+msgstr "尚未安装，因此这些功能都没有运行。"
+
+msgid ""
+"Keep a recovery code somewhere safe once setup is complete. It is the only "
+"way back in if you lose the app."
+msgstr "设置完成后请妥善保存恢复代码。万一丢失验证器，这是唯一的找回方式。"
+
+msgid "Key type"
+msgstr "密钥类型"
+
+msgid "Last comparison"
+msgstr "上次比对"
+
+msgid "Last confirmed by the licence server: %s."
+msgstr "授权服务器上次确认时间：%s。"
+
+msgid "Last recorded"
+msgstr "最近记录"
+
+msgid "Last used"
+msgstr "最近使用"
+
+msgid "Licence"
+msgstr "授权"
+
+msgid "Licence key"
+msgstr "授权密钥"
+
+msgid "Manage"
+msgstr "管理"
+
+msgid ""
+"Networks recognised: %s. More can be added with the at8sec_pro_cdn_providers"
+" filter."
+msgstr "已识别的网络：%s。可通过 at8sec_pro_cdn_providers 过滤器添加更多。"
+
+msgid ""
+"New recovery codes have been issued. The previous set no longer works. Save "
+"these now, they are shown once."
+msgstr "新恢复代码已换发，旧的一组全部作废。请立即保存——它们只显示这一次。"
+
+msgid "No action was requested."
+msgstr "没有请求任何操作。"
+
+msgid "No known CDN network in front of this request."
+msgstr "此请求前方没有已知的 CDN 网络。"
+
+msgid "No licence key is stored."
+msgstr "尚未保存授权密钥。"
+
+msgid "No licence key stored."
+msgstr "未保存授权密钥。"
+
+msgid "No role"
+msgstr "无角色"
+
+msgid ""
+"Nobody is locked out by this list. It decides who is asked, and who is "
+"reminded."
+msgstr "此名单不会把任何人拒之门外，只决定谁被要求启用、谁会收到提醒。"
+
+msgid "None yet."
+msgstr "暂无。"
+
+msgid "None."
+msgstr "无。"
+
+msgid "Not valid for this site."
+msgstr "对本站点无效。"
+
+msgid "Nothing recorded"
+msgstr "暂无记录"
+
+msgid "Nothing yet."
+msgstr "暂无。"
+
+msgid "Off"
+msgstr "关闭"
+
+msgid "Off."
+msgstr "已关闭。"
+
+msgid "Offer two-factor authentication on this site"
+msgstr "在本站点提供两步验证"
+
+msgid "On"
+msgstr "开启"
+
+msgid "On."
+msgstr "已开启。"
+
+msgid "On. Recovery codes left: %d."
+msgstr "已开启。剩余恢复代码：%d 个。"
+
+msgid "Only the account holder can set this up."
+msgstr "只有账号本人能完成设置。"
+
+msgid ""
+"Paste the key you were sent. The stored key is shown shortened; typing a new"
+" one replaces it."
+msgstr "粘贴你收到的密钥。已保存的密钥只显示缩略形式；输入新密钥将直接替换。"
+
+msgid "Plugins"
+msgstr "插件"
+
+msgid "Pro tools"
+msgstr "Pro 工具"
+
+msgid "Progress"
+msgstr "进度"
+
+msgid "Quiet for longer than the threshold"
+msgstr "超过阈值未使用"
+
+msgid "Read every file again and list what differs."
+msgstr "重新读取全部文件并列出差异。"
+
+msgid "Read every file again and list what differs?"
+msgstr "重新读取全部文件并列出差异？"
+
+msgid ""
+"Record the site as it is now? A baseline that already exists is replaced."
+msgstr "按当前状态记录站点？已有的基准将被替换。"
+
+msgid "Recovery codes"
+msgstr "恢复代码"
+
+msgid "Recovery codes left: %d."
+msgstr "剩余恢复代码：%d 个。"
+
+msgid "Registered"
+msgstr "注册时间"
+
+msgid "Release this site"
+msgstr "解绑此站点"
+
+msgid ""
+"Release this site from the licence? The key can then be used on a different "
+"site."
+msgstr "将此站点从授权中解绑？密钥之后可绑定到其他站点。"
+
+msgid "Remember a browser for (days)"
+msgstr "信任浏览器的天数"
+
+msgid "Remember this device for %d days"
+msgstr "信任此设备 %d 天"
+
+msgid "Remove the stored fingerprints and the last result?"
+msgstr "删除已保存的指纹和上次比对结果？"
+
+msgid "Removes the stored fingerprints and the last result."
+msgstr "删除已保存的指纹和上次比对结果。"
+
+msgid ""
+"Replaces the arithmetic question on the sign-in form with a hosted "
+"challenge. This is the one feature here that talks to a third party — the "
+"widget is loaded from Cloudflare and the answer is checked by Cloudflare. "
+"Leave it off to keep everything on this server."
+msgstr ""
+"用云端托管的人机验证替换登录表单上的算术题。这是这里唯一与第三方通信的功能——组件从 Cloudflare 加载，答案也由 Cloudflare "
+"校验。不想依赖外部服务就保持关闭。"
+
+msgid "Replaces the current set. Any unused codes stop working."
+msgstr "将替换当前一组，未用完的代码全部作废。"
+
+msgid "Reset two-factor for this account"
+msgstr "重置此账号的两步验证"
+
+msgid "Role"
+msgstr "角色"
+
+msgid "Roles asked to use it"
+msgstr "建议启用的角色"
+
+msgid "Run %s."
+msgstr "运行 %s。"
+
+msgid "Runs until %s."
+msgstr "有效期至 %s。"
+
+msgid "Save changes"
+msgstr "保存更改"
+
+msgid "Saved."
+msgstr "已保存。"
+
+msgid "Secret key"
+msgstr "私钥"
+
+msgid "Set up"
+msgstr "设置"
+
+msgid "Showing the first %1$s of %2$s."
+msgstr "显示前 %1$s 项（共 %2$s 项）。"
+
+msgid "Site key"
+msgstr "站点密钥"
+
+msgid ""
+"Six digits, or one of your recovery codes. Leave empty if two-factor is not "
+"set up on your account."
+msgstr "输入 6 位验证码或一个恢复代码。你的账号未开启两步验证时留空即可。"
+
+msgid "Six-digit code from the app"
+msgstr "验证器应用中的 6 位验证码"
+
+msgid "Status"
+msgstr "状态"
+
+msgid ""
+"Stored on this server and never printed back into this page. Leave empty to "
+"keep the one already saved."
+msgstr "只保存在本服务器上，绝不会回显到页面里。留空则保持已保存的密钥不变。"
+
+msgid ""
+"That code was not accepted. Check the clock on your device and enter the "
+"current code."
+msgstr "验证码未被接受。请校准设备时钟后输入当前验证码。"
+
+msgid ""
+"That code was not accepted. Check the clock on your device, then try the "
+"current code — or use one of your recovery codes."
+msgstr "验证码未被接受。请校准设备时钟后重试当前验证码——或改用恢复代码。"
+
+msgid "The add-on for At8 Security. Requires the free At8 Security plugin."
+msgstr "At8 Security 附加组件。需要免费版 At8 Security 插件。"
+
+msgid ""
+"The anti-bot check did not complete. Please reload the page and try again."
+msgstr "人机验证未完成，请刷新页面后重试。"
+
+msgid "The anti-bot check was not passed. Please try again."
+msgstr "人机验证未通过，请重试。"
+
+msgid "The baseline and the last comparison have been removed."
+msgstr "基准和上次比对结果已删除。"
+
+msgid ""
+"The comparison was capped before it finished, so the lists below are a lower"
+" bound."
+msgstr "比对因达到上限而提前结束，下方列表只是下限。"
+
+msgid ""
+"The decision is made again on every request, so a site that stops using a "
+"CDN stops trusting it straight away. Only the note above is stored."
+msgstr "识别在每次请求时重新进行，站点不再使用某个 CDN 后会立即不再信任它。只会保存上方的说明文字。"
+
+msgid "The hosted challenge is in use on the sign-in form."
+msgstr "登录表单正在使用云端托管的人机验证。"
+
+msgid "The licence server accepted this key for this site."
+msgstr "授权服务器已接受此密钥绑定本站点。"
+
+msgid "The licence server answered with HTTP %d."
+msgstr "授权服务器返回 HTTP %d。"
+
+msgid "The licence server confirmed this key."
+msgstr "授权服务器已确认此密钥。"
+
+msgid ""
+"The licence server could not be reached, so the features keep running for "
+"another %d days. A security feature is not switched off because a licence "
+"server had a bad afternoon."
+msgstr "无法连接授权服务器，功能将继续运行 %d 天。安全功能不会因为授权服务器一时故障而被关闭。"
+
+msgid "The licence server did not accept this key for this site."
+msgstr "授权服务器未接受此密钥绑定本站点。"
+
+msgid "The licence server sent a response that could not be read."
+msgstr "授权服务器返回了无法解析的响应。"
+
+msgid "The next sign-in here will ask for a code again."
+msgstr "下次在此登录将重新要求输入验证码。"
+
+msgid ""
+"The scan was capped before it finished, so some files were not examined. The"
+" lists below are a lower bound."
+msgstr "扫描因达到上限而提前结束，部分文件未检查。下方列表只是下限。"
+
+msgid "Themes"
+msgstr "主题"
+
+msgid "There is no two-factor setup in progress for this account."
+msgstr "此账号当前没有进行中的两步验证设置。"
+
+msgid ""
+"This account has started setting up two-factor authentication. Only the "
+"account holder can finish it, and only they ever see the key."
+msgstr "此账号已开始设置两步验证。只有账号本人能完成设置，密钥也只有本人可见。"
+
+msgid ""
+"This account uses two-factor authentication. Enter the six-digit code from "
+"your authenticator app to finish signing in."
+msgstr "此账号已启用两步验证。请输入验证器应用中的 6 位验证码完成登录。"
+
+msgid "This browser is no longer remembered."
+msgstr "此浏览器已取消信任。"
+
+msgid "This licence does not expire."
+msgstr "此授权永久有效。"
+
+msgid "This request"
+msgstr "当前请求"
+
+msgid ""
+"This site asks accounts in your role to use two-factor authentication. <a "
+"href=\"%s\">Set it up on your profile</a> — a password alone is not enough "
+"for the access you have."
+msgstr "本站点建议你所在的角色启用两步验证。<a href=\"%s\">前往资料页设置</a>——以你的权限，光有密码并不够。"
+
+msgid ""
+"This site has been released from the licence. The key can now be used "
+"elsewhere."
+msgstr "此站点已从授权中解绑，密钥现在可以绑定其他站点。"
+
+msgid ""
+"This site looks like it is behind %s, but the detection above is off. Until "
+"it is switched on, every visitor is seen as coming from the same address."
+msgstr "本站点似乎位于 %s 之后，但上方的识别功能未开启。在开启之前，所有访客都会被视为来自同一个地址。"
+
+msgid "Time based"
+msgstr "基于时间"
+
+msgid "Turn on two-factor authentication"
+msgstr "开启两步验证"
+
+msgid ""
+"Turn two-factor authentication off for this account? Their recovery codes "
+"are discarded as well."
+msgstr "关闭此账号的两步验证？其恢复代码也将一并作废。"
+
+msgid "Turn two-factor off"
+msgstr "关闭两步验证"
+
+msgid "Two-factor authentication"
+msgstr "两步验证"
+
+msgid ""
+"Two-factor authentication has been turned off for that account, and its "
+"recovery codes have been discarded."
+msgstr "该账号的两步验证已关闭，恢复代码已作废。"
+
+msgid "Two-factor authentication is off for your account."
+msgstr "你的账号尚未开启两步验证。"
+
+msgid ""
+"Two-factor authentication is on. Your recovery codes are below — save them "
+"now, they are shown once."
+msgstr "两步验证已开启。恢复代码如下——请立即保存，它们只显示这一次。"
+
+msgid "Two-factor authentication is switched off for this site."
+msgstr "本站点的两步验证已关闭。"
+
+msgid ""
+"Uploads, caches and backup folders are left out, because those are supposed "
+"to change."
+msgstr "上传、缓存和备份目录不参与比对——它们本来就经常变。"
+
+msgid "Use the hosted challenge on the sign-in form"
+msgstr "登录表单使用云端托管验证"
+
+msgid ""
+"Use this when the account holder has lost both their authenticator and their"
+" recovery codes — for example when their phone is gone. It leaves the "
+"account protected by its password alone until they set two-factor up again."
+msgstr "当账号持有人同时丢失验证器和恢复代码时使用——例如手机丢了。重置后该账号仅靠密码保护，直到重新设置两步验证。"
+
+msgid ""
+"Used by the report on the Pro tools tab. Nothing happens to an account "
+"automatically."
+msgstr "供「Pro 工具」选项卡的报告使用。不会对任何账号自动执行操作。"
+
+msgid "What"
+msgstr "对象"
+
+msgid ""
+"When an account was last used is recorded by this plugin, so the first list "
+"can only go back as far as the add-on has been installed. The second list is"
+" accounts nothing has been recorded for at all."
+msgstr "账号最近使用时间由本插件记录，因此第一份列表只能追溯到附加组件安装之后。第二份列表是从未有使用记录的账号。"
+
+msgid "WordPress core"
+msgstr "WordPress 核心"
+
+msgid "You are not allowed to do that."
+msgstr "你没有权限执行该操作。"
+
+msgid ""
+"You will be asked for a code the next time you sign in on a device you have "
+"not marked as remembered."
+msgstr "下次在未标记为「信任」的设备上登录时，将要求输入验证码。"
+
+msgid ""
+"You will need an authenticator app on your phone — any app that supports "
+"time-based codes will do. Nothing is sent to a third party; the key stays on"
+" this server and in your app."
+msgstr "你需要在手机上安装一个验证器应用——任何支持基于时间验证码的应用都可以。不会向第三方发送任何数据；密钥只保存在本服务器和你的应用里。"
+
+msgid "Your password alone will sign you in again."
+msgstr "之后仅凭密码即可登录。"
+
+msgid "Your role is one this site asks to use two-factor authentication."
+msgstr "你所在的角色属于本站点建议启用两步验证的范围。"
+
+msgid "Zero switches the \"remember this device\" option off entirely."
+msgstr "设为 0 将完全关闭「记住此设备」功能。"
+
+msgid ""
+"each one signs you in a single time if you lose your authenticator. Store "
+"them somewhere other than this browser."
+msgstr "丢失验证器时，每个代码可使用一次。请保存在这台浏览器之外的地方。"
+
+msgid "never"
+msgstr "从未"
+
+msgid "none"
+msgstr "无"
+
+msgid "over IPv6"
+msgstr "IPv6 网络下"

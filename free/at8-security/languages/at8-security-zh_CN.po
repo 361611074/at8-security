@@ -1,0 +1,551 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: at8-security 2.0.2\n"
+"PO-Revision-Date: 2026-09-21 15:30+0800\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: at8 build\n"
+
+msgid "%s is available in the At8 Security Pro add-on."
+msgstr "%s 功能在 At8 Security Pro 附加组件中提供。"
+
+msgid "404s allowed per five minutes"
+msgstr "每 5 分钟允许的 404 次数"
+
+msgid "A field that people never see but bots happily fill in."
+msgstr "真人永远不会看到、而机器人却乐于填写的字段。"
+
+msgid ""
+"A hidden field plus a one-comment-per-minute limit for visitors who are not "
+"signed in."
+msgstr "隐藏字段，外加对未登录访客每分钟一条评论的限制。"
+
+msgid ""
+"A hosted anti-bot challenge as an alternative to the arithmetic question"
+msgstr "以云端托管的人机验证替代算术题"
+
+msgid ""
+"A hosted anti-bot challenge, as an alternative to the arithmetic question,"
+msgstr "以云端托管的人机验证替代算术题，"
+
+msgid ""
+"A report of accounts that have gone quiet, with the date each was last used"
+msgstr "列出长期未使用的账号及其最近一次使用日期"
+
+msgid "A short arithmetic question. Nothing is loaded from a third party."
+msgstr "一道简单的算术题，不加载任何第三方资源。"
+
+msgid "Account"
+msgstr "账号"
+
+msgid "Address"
+msgstr "地址"
+
+msgid "Address locked out"
+msgstr "地址已被锁定"
+
+msgid "Alert recipient"
+msgstr "提醒接收邮箱"
+
+msgid "All settings have been restored to their defaults."
+msgstr "所有设置已恢复为默认值。"
+
+msgid "Allow and block lists"
+msgstr "允许与阻止名单"
+
+msgid "Always allowed addresses"
+msgstr "始终允许的地址"
+
+msgid "An intruder with an admin session cannot edit PHP from the dashboard."
+msgstr "即使入侵者拿到了管理员会话，也无法在后台直接编辑 PHP。"
+
+msgid "Anonymous requests to /wp/v2/users return nothing."
+msgstr "匿名请求 /wp/v2/users 不会返回任何数据。"
+
+msgid "Applies when a password is set or changed."
+msgstr "在设置或修改密码时生效。"
+
+msgid "At8 Security"
+msgstr "At8 Security"
+
+msgid "At8 Security Pro"
+msgstr "At8 Security Pro"
+
+msgid ""
+"At8 Security Pro is a separate add-on for sites that need more than the "
+"essentials. It installs alongside this plugin and adds its features to these"
+" same screens — nothing on this page changes when it is absent."
+msgstr ""
+"At8 Security Pro "
+"是独立的附加组件，为需要更多功能的站点而准备。它与本插件一同安装，并把功能加入同样的页面——没有它时，本页面的功能不受任何影响。"
+
+msgid ""
+"At8 Security requires PHP %s or newer. The plugin has been disabled to keep "
+"your site online."
+msgstr "At8 Security 需要 PHP %s 或更高版本。插件已自动停用，以保证站点正常运行。"
+
+msgid "Attempts allowed"
+msgstr "允许尝试次数"
+
+msgid "Audit log"
+msgstr "审计日志"
+
+msgid "Automatic detection of CDN and proxy address ranges"
+msgstr "自动识别 CDN 与代理的地址段"
+
+msgid "Basic hardening"
+msgstr "基础加固"
+
+msgid "Block author enumeration"
+msgstr "阻止作者枚举"
+
+msgid "Block known scanner user agents"
+msgstr "阻止已知的扫描器 User Agent"
+
+msgid "Block script execution in the uploads folder"
+msgstr "禁止上传目录执行脚本"
+
+msgid "Blocked addresses"
+msgstr "阻止的地址"
+
+msgid "Blocks brute-force attempts and pingback reflection abuse."
+msgstr "阻止暴力破解与 pingback 反射滥用。"
+
+msgid "Checked %1$d account(s). These should be changed: %2$s"
+msgstr "已检查 %1$d 个账号。以下账号的密码应当修改：%2$s"
+
+msgid ""
+"Checked %d account(s): none of them use a password from the common-password "
+"list."
+msgstr "已检查 %d 个账号：没有账号使用常见弱密码列表中的密码。"
+
+msgid "Clear the log"
+msgstr "清空日志"
+
+msgid "Close comments across the site"
+msgstr "关闭全站评论"
+
+msgid "Comments"
+msgstr "评论"
+
+msgid ""
+"Compares stored accounts against a list of the most commonly used passwords."
+" Verification is deliberately slow, so a large user base is checked in "
+"batches."
+msgstr "将站内账号与常见弱密码列表逐一比对。校验刻意放慢速度，用户较多时会分批检查。"
+
+msgid "Content Security Policy"
+msgstr "内容安全策略（CSP）"
+
+msgid "Custom login path"
+msgstr "自定义登录路径"
+
+msgid "Custom path"
+msgstr "自定义路径"
+
+msgid "Detail"
+msgstr "详情"
+
+msgid "Directory scanning produces a burst of 404s."
+msgstr "目录扫描会产生大量 404 请求。"
+
+msgid "Disable XML-RPC"
+msgstr "禁用 XML-RPC"
+
+msgid "Disable the built-in plugin and theme editor"
+msgstr "禁用内置的插件与主题编辑器"
+
+msgid "Drops two rarely used head tags."
+msgstr "移除两个极少用到的 head 标签。"
+
+msgid "E-mail me about sign-ins from new addresses"
+msgstr "新地址登录时给我发邮件提醒"
+
+msgid "Enable HSTS"
+msgstr "启用 HSTS"
+
+msgid "Enable request filtering"
+msgstr "启用请求过滤"
+
+msgid "Enable the weak-password check in Tools"
+msgstr "在「工具」中启用弱密码检查"
+
+msgid "Entries currently stored: %s"
+msgstr "当前日志条数：%s"
+
+msgid "Event"
+msgstr "事件"
+
+msgid ""
+"Every protection below is off-by-default only where switching it on could "
+"lock you out. Changes are saved with the button at the bottom of each tab."
+msgstr "下方保护项中，只有开启后可能把你自己挡在门外的才默认关闭。所有改动通过每个选项卡底部的按钮保存。"
+
+msgid "Failed sign-in"
+msgstr "登录失败"
+
+msgid "File integrity monitoring against a stored baseline"
+msgstr "基于基准快照的文件完整性监控"
+
+msgid "Filter comment spam"
+msgstr "过滤垃圾评论"
+
+msgid "Firewall"
+msgstr "防火墙"
+
+msgid "Hardening"
+msgstr "加固"
+
+msgid "Headers & CSP"
+msgstr "响应头与 CSP"
+
+msgid "Hidden field trap"
+msgstr "隐藏字段陷阱"
+
+msgid "Hide the WordPress version"
+msgstr "隐藏 WordPress 版本号"
+
+msgid "Hide user listings from the REST API"
+msgstr "在 REST API 中隐藏用户列表"
+
+msgid ""
+"Hides the comment form and existing comments, and removes the Comments menu."
+" Turning it back off restores everything."
+msgstr "隐藏评论表单和已有评论，并移除「评论」菜单。关闭该选项后一切恢复原样。"
+
+msgid "Human check on the login form"
+msgstr "登录表单人机验证"
+
+msgid "Human check: what is %1$d + %2$d?"
+msgstr "人机验证：%1$d + %2$d 等于多少？"
+
+msgid "Leave empty to use the site administration address."
+msgstr "留空则使用站点管理邮箱。"
+
+msgid "Limit failed login attempts"
+msgstr "限制登录失败次数"
+
+msgid "Limit repeated 404 responses"
+msgstr "限制重复 404 请求"
+
+msgid "Limit request rate per address"
+msgstr "按地址限制请求频率"
+
+msgid "Locked for %d minute(s)."
+msgstr "已锁定 %d 分钟。"
+
+msgid "Lockout length (minutes)"
+msgstr "锁定时长（分钟）"
+
+msgid "Login"
+msgstr "登录"
+
+msgid "Login failed."
+msgstr "登录失败。"
+
+msgid "Login protection"
+msgstr "登录保护"
+
+msgid "Maintenance tools"
+msgstr "维护工具"
+
+msgid "Minimum length"
+msgstr "最小长度"
+
+msgid "Move the login form to a custom path"
+msgstr "把登录表单移到自定义路径"
+
+msgid "Nothing recorded yet."
+msgstr "暂无记录。"
+
+msgid "One per line. Single addresses and CIDR ranges are both accepted."
+msgstr "每行一条。支持单个 IP 地址和 CIDR 地址段。"
+
+msgid ""
+"Only fill this in if your site sits behind a proxy. Forwarded IP headers are"
+" trusted from these addresses alone — which is what stops a visitor from "
+"pretending to be someone else."
+msgstr "仅当站点位于代理之后时填写。转发 IP 请求头只信任来自这些地址的请求——这正是防止访客伪造身份的关键。"
+
+msgid "Password strength"
+msgstr "密码强度"
+
+msgid "Policy"
+msgstr "策略"
+
+msgid "Pro"
+msgstr "Pro"
+
+msgid "Re-apply rules"
+msgstr "重新应用规则"
+
+msgid ""
+"Re-writes the .htaccess block that backs the directory-listing and uploads "
+"settings. Use this after moving the site or editing .htaccess by hand."
+msgstr "重写支撑目录列表和上传目录设置的 .htaccess 规则块。迁移站点或手工编辑过 .htaccess 后使用。"
+
+msgid "Read more about Pro"
+msgstr "了解更多 Pro 功能"
+
+msgid "Recommended while you check the browser console for violations."
+msgstr "建议先在浏览器控制台查看违规报告后再收紧。"
+
+msgid "Redirect front-end traffic to HTTPS"
+msgstr "将前台访问重定向到 HTTPS"
+
+msgid "Remove RSD and WLW links"
+msgstr "移除 RSD 与 WLW 链接"
+
+msgid "Removes the generator tag and the ?ver= query on styles and scripts."
+msgstr "移除 generator 标签以及样式和脚本链接上的 ?ver= 参数。"
+
+msgid "Repeated failures from one address are temporarily refused."
+msgstr "同一地址反复失败后将被临时拒绝。"
+
+msgid "Report only (do not block)"
+msgstr "仅报告（不拦截）"
+
+msgid "Requests allowed per window"
+msgstr "每个时间窗允许的请求数"
+
+msgid "Requests such as ?author=1 are redirected to the home page."
+msgstr "类似 ?author=1 的请求会被重定向到首页。"
+
+msgid "Require strong passwords"
+msgstr "强制使用强密码"
+
+msgid "Restore defaults"
+msgstr "恢复默认"
+
+msgid ""
+"Restores every option on this screen to its default value. Nothing else is "
+"removed."
+msgstr "将本页所有选项恢复为默认值，不会删除其他数据。"
+
+msgid "Reverse proxy or CDN addresses"
+msgstr "反向代理或 CDN 地址"
+
+msgid "Run the check"
+msgstr "开始检查"
+
+msgid "Save changes"
+msgstr "保存更改"
+
+msgid "Security headers"
+msgstr "安全响应头"
+
+msgid "Security scanners and empty user agents are refused."
+msgstr "拒绝安全扫描器和空 User Agent。"
+
+msgid "Send a CSP header"
+msgstr "发送 CSP 响应头"
+
+msgid "Send hardening headers"
+msgstr "发送安全加固响应头"
+
+msgid "Sent once per address, not on every login."
+msgstr "每个地址只发一次，不会每次登录都发。"
+
+msgid "Server rules"
+msgstr "服务器规则"
+
+msgid ""
+"Server rules re-applied. They only take effect on Apache — on Nginx, set the"
+" equivalent rules in the server block."
+msgstr "服务器规则已重新应用。仅在 Apache 上生效——Nginx 请在服务器配置块中设置等效规则。"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Settings changed"
+msgstr "设置已更改"
+
+msgid "Signed in"
+msgstr "登录成功"
+
+msgid "Slows down content scraping and simple floods."
+msgstr "减缓内容抓取和简单洪水攻击。"
+
+msgid "Stops the form from revealing whether a username exists."
+msgstr "防止表单提示某个用户名是否存在。"
+
+msgid ""
+"Strong, and hard to undo: the browser remembers it for a year. Only turn "
+"this on once HTTPS is stable on every subdomain."
+msgstr "效果强烈且不易撤销：浏览器会记住一年。请确认 HTTPS 在所有子域名上都稳定后再开启。"
+
+msgid ""
+"Tested against the URL only, so content in posts and comments is unaffected."
+msgstr "只检测 URL，不影响文章和评论里的内容。"
+
+msgid "That answer was not correct. Please try again."
+msgstr "答案不正确，请重试。"
+
+msgid ""
+"That password appears on lists of commonly used passwords. Please choose "
+"another one."
+msgstr "该密码出现在常见弱密码列表中，请换一个。"
+
+msgid "The Pro add-on is active on this site."
+msgstr "Pro 附加组件已在本站点启用。"
+
+msgid "The audit log has been cleared."
+msgstr "审计日志已清空。"
+
+msgid ""
+"The custom login path was not enabled: \"%s\" is already used by an existing"
+" post or page. Please choose another one."
+msgstr "自定义登录路径未启用：「%s」已被现有的文章或页面占用，请换一个。"
+
+msgid ""
+"The default wp-login.php and a bare /wp-admin/ then answer with a plain 404 "
+"instead of advertising the new location."
+msgstr "之后默认的 wp-login.php 和直接访问 /wp-admin/ 都会返回普通 404，不再暴露新位置。"
+
+msgid "The human check has expired. Please reload the page and try again."
+msgstr "人机验证已过期，请刷新页面后重试。"
+
+msgid ""
+"The list was long, so only part of it was checked — run the tool again to "
+"continue."
+msgstr "列表较长，只检查了一部分——再次运行工具可继续。"
+
+msgid ""
+"The login page stayed at wp-login.php: the path you entered is empty, or it "
+"collides with a reserved WordPress path (such as admin or login). Please "
+"choose another one, for example my-login."
+msgstr ""
+"登录页仍保留在 wp-login.php：你填写的路径为空，或与 WordPress 保留路径（如 admin、login）冲突。请换一个，例如 my-"
+"login。"
+
+msgid "The password must be at least %d characters long."
+msgstr "密码长度至少为 %d 个字符。"
+
+msgid "The password must contain at least one non-alphanumeric character."
+msgstr "密码必须包含至少一个符号。"
+
+msgid "The password must contain at least one number."
+msgstr "密码必须包含至少一个数字。"
+
+msgid "The password must contain both upper-case and lower-case letters."
+msgstr "密码必须同时包含大写和小写字母。"
+
+msgid ""
+"The path you typed was adjusted to \"%1$s\" while saving. Your login address"
+" is now: %2$s — open it and bookmark it."
+msgstr "你填写的路径在保存时被调整为「%1$s」。你现在的登录地址是：%2$s —— 请打开并收藏它。"
+
+msgid "The username or password you entered is incorrect."
+msgstr "用户名或密码不正确。"
+
+msgid ""
+"These rules inspect the URL and request parameters. They are a second layer,"
+" not a substitute for keeping WordPress, themes and plugins up to date."
+msgstr "这些规则检查 URL 和请求参数。它们是第二道防线，不能替代及时更新 WordPress、主题和插件。"
+
+msgid "These visitors skip every check above."
+msgstr "这些访客跳过上述所有检查。"
+
+msgid "This endpoint requires authentication."
+msgstr "此接口需要身份验证。"
+
+msgid ""
+"This file name looks like an executable disguised as an image, so it was "
+"rejected."
+msgstr "该文件名看起来是伪装成图片的可执行文件，已被拒绝。"
+
+msgid "This file type is not allowed for security reasons."
+msgstr "出于安全考虑，不允许上传此类型文件。"
+
+msgid "Tools"
+msgstr "工具"
+
+msgid "Turn off directory listing"
+msgstr "关闭目录列表"
+
+msgid "Two-factor authentication with recovery codes and remembered devices"
+msgstr "两步验证，含恢复代码和信任设备"
+
+msgid "Unknown action."
+msgstr "未知操作。"
+
+msgid "Use a neutral login error"
+msgstr "登录错误提示中性化"
+
+msgid "Weak-password check"
+msgstr "弱密码检查"
+
+msgid "Website"
+msgstr "网站"
+
+msgid "Website address"
+msgstr "网站地址"
+
+msgid "When"
+msgstr "时间"
+
+msgid "Window length (seconds)"
+msgstr "时间窗长度（秒）"
+
+msgid ""
+"Writes an .htaccess block to the site root on Apache. If your host does not "
+"allow Options overrides there, the site can start answering with a 500 error"
+" — check the front page after switching this on. On Nginx, use autoindex off"
+" instead."
+msgstr ""
+"在 Apache 站点根目录写入 .htaccess 规则块。如果主机不允许覆盖 Options，站点可能开始返回 500 "
+"错误——开启后请检查首页。Nginx 请改用 autoindex off。"
+
+msgid ""
+"Writes an .htaccess file inside the uploads folder itself on Apache, so an "
+"uploaded file can never be executed. On Nginx, add a location block that "
+"denies PHP under uploads."
+msgstr ""
+"在 Apache 的上传目录内写入 .htaccess，上传的文件将无法执行。Nginx 请添加一个拒绝执行 uploads 下 PHP 的 "
+"location 块。"
+
+msgid ""
+"X-Content-Type-Options, X-Frame-Options, Referrer-Policy and Permissions-"
+"Policy."
+msgstr ""
+"X-Content-Type-Options、X-Frame-Options、Referrer-Policy 和 Permissions-Policy。"
+
+msgid "You are commenting too quickly. Please wait a moment and try again."
+msgstr "评论太快了，请稍等片刻再试。"
+
+msgid "You are not allowed to access this page."
+msgstr "你没有权限访问此页面。"
+
+msgid "You are not allowed to perform this action."
+msgstr "你没有权限执行此操作。"
+
+msgid ""
+"Your login address is now: %s — the default wp-login.php no longer works. "
+"Open the address and bookmark it."
+msgstr "你现在的登录地址是：%s —— 默认的 wp-login.php 已失效。请打开并收藏该地址。"
+
+msgid "Your login address:"
+msgstr "你的登录地址："
+
+msgid "[%s] New sign-in from an unrecognised address"
+msgstr "[%s] 有新地址登录了你的账号"
+
+msgid "　↳ Command execution signatures"
+msgstr "　↳ 命令执行特征"
+
+msgid "　↳ Cross-site scripting signatures"
+msgstr "　↳ 跨站脚本（XSS）特征"
+
+msgid "　↳ Directory traversal signatures"
+msgstr "　↳ 目录穿越特征"
+
+msgid "　↳ SQL injection signatures"
+msgstr "　↳ SQL 注入特征"
+
+msgid "Too many failed login attempts. Please try again in %d minute."
+msgid_plural "Too many failed login attempts. Please try again in %d minutes."
+msgstr[0] "登录失败次数过多，请在 %d 分钟后重试。"
