@@ -1,7 +1,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: at8-license-server 2.0.2\n"
+"Project-Id-Version: at8-license-server 1.1.0\n"
 "PO-Revision-Date: 2026-09-21 15:30+0800\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -90,9 +90,6 @@ msgstr "到期时间"
 msgid "File"
 msgstr "文件"
 
-msgid "Hostname of the site making the call."
-msgstr "发起请求的站点域名。"
-
 msgid "Issued keys"
 msgstr "已签发的密钥"
 
@@ -173,9 +170,6 @@ msgstr "已发布的版本"
 
 msgid "Release"
 msgstr "解绑"
-
-msgid "Release removed. The file was left on disk."
-msgstr "发布已下架，文件仍保留在服务器磁盘上。"
 
 msgid "Release saved."
 msgstr "发布已保存。"
@@ -290,9 +284,6 @@ msgstr "尝试次数过多，请稍后再试。"
 msgid "Unknown product"
 msgstr "未知产品"
 
-msgid "Unpublish"
-msgstr "下架"
-
 msgid ""
 "Upload the add-on zip and fill in the version. Licensed sites will be "
 "offered it on their Plugins screen."
@@ -318,3 +309,135 @@ msgstr "你没有权限管理授权。"
 
 msgid "file missing"
 msgstr "文件缺失"
+
+msgid "%d days"
+msgstr "%d 天"
+
+msgid "%d site"
+msgstr "%d 个站点"
+
+msgid "Action"
+msgstr "操作"
+
+msgid "Audit log"
+msgstr "审计日志"
+
+msgid "Clear the log"
+msgstr "清空日志"
+
+msgid "Delete all licence records when the plugin is deleted"
+msgstr "删除插件时同时删除全部授权记录"
+
+msgid "Details"
+msgstr "详情"
+
+msgid ""
+"Every licence decision, with who made it and from where. Keys themselves are"
+" never written here."
+msgstr "每一次授权判定都会记录：谁做的、从哪里发起的。密钥本身从不写入此表。"
+
+msgid "Fingerprint %1$s · %2$s"
+msgstr "指纹 %1$s · %2$s"
+
+msgid "Full URL of the site making the call."
+msgstr "发起请求站点的完整 URL。"
+
+msgid "Home URL, when it differs from the site URL."
+msgstr "首页 URL，当它与站点 URL 不同时填写。"
+
+msgid ""
+"Hostname of the site making the call. site_url is accepted in its place."
+msgstr "发起请求站点的主机名，也可以用 site_url 代替。"
+
+msgid "Keep entries for"
+msgstr "日志保留时长"
+
+msgid "Legacy spelling of php_version."
+msgstr "php_version 的旧写法。"
+
+msgid "Legacy spelling of wp_version."
+msgstr "wp_version 的旧写法。"
+
+msgid "Nothing has been recorded yet."
+msgstr "暂无任何记录。"
+
+msgid "Object"
+msgstr "对象"
+
+msgid ""
+"Off by default: licences, site bindings and this log are commercial records "
+"and outlive the plugin. Deleting the WordPress plugin is a routine act and "
+"should not destroy them. Define AT8LS_PURGE_ON_UNINSTALL in wp-config.php to"
+" decide it per site."
+msgstr ""
+"默认关闭：授权、站点绑定与本日志都是商业记录，生命周期长于插件本身。删除 WordPress 插件是常规操作，不应销毁这些记录。可在 wp-"
+"config.php 中定义 AT8LS_PURGE_ON_UNINSTALL，按站点单独决定。"
+
+msgid "Older entries are removed by a daily job."
+msgstr "超期的记录由每日任务自动清理。"
+
+msgid ""
+"Only a published build is offered to licensed sites. Everything else is kept"
+" as a record."
+msgstr "只有已发布的版本才会提供给已授权站点，其余状态均作为记录保留。"
+
+msgid "PHP version of the calling site."
+msgstr "发起请求站点的 PHP 版本。"
+
+msgid "Publish"
+msgstr "发布"
+
+msgid "Recent activity"
+msgstr "最近活动"
+
+msgid "Release withdrawn. The file was left on disk."
+msgstr "版本已撤回。文件仍保留在磁盘上。"
+
+msgid "Resume"
+msgstr "恢复"
+
+msgid "Suspend"
+msgstr "暂停"
+
+msgid "Suspended"
+msgstr "已暂停"
+
+msgid "The audit log has been cleared."
+msgstr "审计日志已清空。"
+
+msgid "This licence key has been suspended. Please contact support."
+msgstr "此授权密钥已被暂停，请联系客服。"
+
+msgid "Uninstalling"
+msgstr "卸载"
+
+msgid "When"
+msgstr "时间"
+
+msgid "Who"
+msgstr "操作者"
+
+msgid "Withdraw"
+msgstr "撤回"
+
+msgid "WordPress version of the calling site."
+msgstr "发起请求站点的 WordPress 版本。"
+
+msgid "production, staging or development."
+msgstr "production、staging 或 development。"
+
+msgid "%d site"
+msgid_plural "%d sites"
+msgstr[0] "%d 个站点"
+
+#~ msgid "Hostname of the site making the call."
+#~ msgstr "发起请求的站点域名。"
+
+#~ msgid "Release removed. The file was left on disk."
+#~ msgstr "发布已下架，文件仍保留在服务器磁盘上。"
+
+#~ msgid "Unpublish"
+#~ msgstr "下架"
+
+#~ msgid "%d sites"
+#~ msgstr "%d 个站点"
