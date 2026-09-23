@@ -858,14 +858,24 @@ class Admin {
 	 */
 	public function handle_tool() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to do that.', 'at8-security-pro' ) );
+			// 403, not the 500 wp_die() answers with by default: this is a
+			// refusal, not a broken server.
+			wp_die(
+				esc_html__( 'You are not allowed to do that.', 'at8-security-pro' ),
+				'',
+				array( 'response' => 403 )
+			);
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked on the next line.
 		$action = isset( $_POST['at8sec_pro_action'] ) ? sanitize_key( wp_unslash( $_POST['at8sec_pro_action'] ) ) : '';
 
 		if ( '' === $action ) {
-			wp_die( esc_html__( 'No action was requested.', 'at8-security-pro' ) );
+			wp_die(
+				esc_html__( 'No action was requested.', 'at8-security-pro' ),
+				'',
+				array( 'response' => 400 )
+			);
 		}
 
 		check_admin_referer( 'at8sec_pro_' . $action );

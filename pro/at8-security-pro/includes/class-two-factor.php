@@ -797,7 +797,12 @@ class Two_Factor {
 		$user_id = get_current_user_id();
 
 		if ( ! $user_id || ! current_user_can( 'read' ) ) {
-			wp_die( esc_html__( 'You are not allowed to do that.', 'at8-security-pro' ) );
+			// 403, not the 500 wp_die() answers with by default.
+			wp_die(
+				esc_html__( 'You are not allowed to do that.', 'at8-security-pro' ),
+				'',
+				array( 'response' => 403 )
+			);
 		}
 
 		$notice = '';

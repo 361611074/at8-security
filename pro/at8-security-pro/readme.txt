@@ -5,7 +5,7 @@ Author URI: https://www.at8.fun/
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -80,7 +80,60 @@ always a way in that does not involve the authenticator app.
 
 No. It reports what differs and leaves the decision to you.
 
+== External Services ==
+
+This plugin talks to two services, both of them for functions you asked for.
+Nothing is sent for analytics, tracking or marketing.
+
+= AT8 licence server =
+
+Service: https://www.at8.fun/
+
+Data sent: the licence key, the site domain and site URL, the WordPress
+version, the PHP version, and whether the site reports itself as production,
+staging or development.
+
+When data is sent: when a key is activated, on the twice-daily licence check,
+when the Plugins screen checks for updates, and when the key is released.
+
+Purpose: this is the licence itself. The server uses it to decide whether the
+key is valid, whether it still has a free site seat, and which build the site
+is entitled to download. It also records the calling IP address and the last
+time the site checked in, so that "which site is using my key" can be answered.
+
+The server does not receive post content, user records, form submissions or any
+other data from your site.
+
+Privacy Policy: https://www.at8.fun/privacy/
+
+= Cloudflare Turnstile =
+
+Service: https://challenges.cloudflare.com/turnstile/v0/siteverify
+
+Data sent: the Turnstile challenge token and the visitor's IP address.
+
+When data is sent: when a visitor submits a form on the site, and only if
+Turnstile has been configured and switched on under At8 Security Pro → Forms.
+
+Purpose: to tell a person apart from a bot filling in forms automatically. The
+form contents themselves are not sent.
+
+Privacy Policy: https://www.cloudflare.com/privacypolicy/
+
+Terms: https://www.cloudflare.com/website-terms/
+
+= Turning the second one off =
+
+Turnstile is optional. With it switched off, no request is made to Cloudflare
+and forms fall back to the plugin's own honeypot and rate limiting.
+
 == Changelog ==
+
+= 2.0.3 =
+A refusal now answers as a refusal.
+
+* Permission refusals from the add-on's tools and the two-factor screen return HTTP 403 instead of 500, which read as "the server broke" rather than "you are not allowed".
+* A tool request that names no action returns HTTP 400 rather than 500.
 
 = 2.0.2 =
 * Bundled a Simplified Chinese translation. The interface language now follows the site language and each user's personal language choice.

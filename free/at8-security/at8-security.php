@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       At8 Security
  * Description:       Lightweight hardening for WordPress: hide version info, disable XML-RPC and user enumeration, send security headers, throttle login attempts, block comment spam, apply a conservative firewall and keep an audit log.
- * Version:           2.0.2
+ * Version:           2.0.3
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Tested up to:      7.1
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AT8SEC_VERSION', '2.0.2' );
+define( 'AT8SEC_VERSION', '2.0.3' );
 define( 'AT8SEC_FILE', __FILE__ );
 define( 'AT8SEC_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AT8SEC_URL', plugin_dir_url( __FILE__ ) );

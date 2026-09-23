@@ -3,7 +3,7 @@
  * Plugin Name:       At8 Security Pro
  * Plugin URI:        https://www.at8.fun/
  * Description:       Adds two-factor authentication, a hosted anti-bot challenge and the maintenance tools to At8 Security. Requires the free At8 Security plugin.
- * Version:           2.0.2
+ * Version:           2.0.3
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Tested up to:      7.1
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AT8SEC_PRO_VERSION', '2.0.2' );
+define( 'AT8SEC_PRO_VERSION', '2.0.3' );
 define( 'AT8SEC_PRO_FILE', __FILE__ );
 define( 'AT8SEC_PRO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AT8SEC_PRO_URL', plugin_dir_url( __FILE__ ) );

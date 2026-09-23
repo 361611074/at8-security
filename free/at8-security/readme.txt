@@ -4,7 +4,7 @@ Tags: security, firewall, login, captcha, spam
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -63,6 +63,10 @@ Nothing is loaded from another domain. Every feature runs on your own server, so
 
 This plugin stores no personal data outside your own database. Addresses in the audit log and in the new-sign-in notice are hashed where they are used as keys, and the log is limited to what an administrator needs in order to see what happened.
 
+**External services**
+
+None. This plugin does not connect to any external service: there is no licence check, no telemetry, no statistics and no account. Every protection runs on your own server. The link to the paid add-on on the settings screen is an ordinary link — it carries nothing about your site, and nothing is sent unless you follow it.
+
 == Installation ==
 
 1. Upload the plugin files to `/wp-content/plugins/at8-security/`, or install it through the Plugins screen.
@@ -108,6 +112,11 @@ Everything except the two `.htaccess` options, which are Apache-specific. The se
 4. Tools: weak-password check and the audit log.
 
 == Changelog ==
+
+= 2.0.3 =
+A refusal now answers as a refusal.
+
+* Reaching the plugin's screens without permission returns HTTP 403. It previously returned 500, which reads as "the server broke" rather than "you are not allowed" — misleading both to the person in front of the screen and to anything watching the site's error rate.
 
 = 2.0.2 =
 Chinese translation and language loading.

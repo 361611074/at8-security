@@ -167,7 +167,16 @@ class Admin {
 	 */
 	public function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You are not allowed to access this page.', 'at8-security' ) );
+			/*
+			 * wp_die() answers 500 unless it is told otherwise, which reads as
+			 * "the server broke" rather than "you may not". A permission
+			 * refusal has to say 403.
+			 */
+			wp_die(
+				esc_html__( 'You are not allowed to access this page.', 'at8-security' ),
+				'',
+				array( 'response' => 403 )
+			);
 		}
 
 		$tabs = $this->tabs();
