@@ -20,11 +20,16 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Db {
 
-	const DB_VERSION        = '1';
+	const DB_VERSION        = '2';
 	const OPTION_DB_VERSION = 'at8ls_db_version';
 
 	/**
-	 * Create or update the tables.
+	 * Create tables, and add the columns a newer version introduced.
+	 *
+	 * dbDelta() is additive on its own: a table or column that is already there
+	 * is left alone, a missing one is created. That is what makes the upgrade
+	 * path safe — no DROP, no rename, and a site that updates mid-flight keeps
+	 * every licence it already issued.
 	 *
 	 * @return void
 	 */
@@ -49,6 +54,7 @@ class Db {
 			note varchar(255) NOT NULL DEFAULT '',
 			created_at bigint(20) unsigned NOT NULL DEFAULT 0,
 			created_by bigint(20) unsigned NOT NULL DEFAULT 0,
+			updated_at bigint(20) unsigned NOT NULL DEFAULT 0,
 			PRIMARY KEY  (id),
 			UNIQUE KEY key_norm (key_norm),
 			KEY product (product),
@@ -59,6 +65,10 @@ class Db {
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			license_id bigint(20) unsigned NOT NULL,
 			domain varchar(191) NOT NULL DEFAULT '',
+			site_url varchar(255) NOT NULL DEFAULT '',
+			home_url varchar(255) NOT NULL DEFAULT '',
+			site_hash char(32) NOT NULL DEFAULT '',
+			environment varchar(20) NOT NULL DEFAULT 'production',
 			activated_at bigint(20) unsigned NOT NULL DEFAULT 0,
 			last_seen bigint(20) unsigned NOT NULL DEFAULT 0,
 			last_ip varchar(45) NOT NULL DEFAULT '',
@@ -66,7 +76,23 @@ class Db {
 			php_version varchar(20) NOT NULL DEFAULT '',
 			PRIMARY KEY  (id),
 			UNIQUE KEY license_domain (license_id,domain),
-			KEY license_id (license_id)
+			KEY license_id (license_id),
+			KEY environment (environment)
+		) {$collate};";
+
+		$suffixes[] = "CREATE TABLE {$names['audit']} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			actor_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			actor_ip varchar(45) NOT NULL DEFAULT '',
+			action varchar(64) NOT NULL DEFAULT '',
+			object_type varchar(32) NOT NULL DEFAULT '',
+			object_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			metadata text NOT NULL,
+			created_at bigint(20) unsigned NOT NULL DEFAULT 0,
+			PRIMARY KEY  (id),
+			KEY action (action),
+			KEY object_lookup (object_type,object_id),
+			KEY created_at (created_at)
 		) {$collate};";
 
 		foreach ( $suffixes as $sql ) {
@@ -77,7 +103,7 @@ class Db {
 	}
 
 	/**
-	 * Are both tables present?
+	 * Are the tables present?
 	 *
 	 * @return bool
 	 */
@@ -86,7 +112,7 @@ class Db {
 
 		$names = tables();
 
-		foreach ( array( $names['licenses'], $names['sites'] ) as $table ) {
+		foreach ( array( $names['licenses'], $names['sites'], $names['audit'] ) as $table ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 

@@ -50,9 +50,37 @@
 	color: #8a5300;
 }
 
+.at8ls-wrap .at8ls-badge.at8ls-suspended {
+	background: #fdf0e0;
+	color: #7a4a00;
+}
+
 .at8ls-wrap .at8ls-badge.at8ls-revoked {
 	background: #fcebea;
 	color: #8a1f16;
+}
+
+.at8ls-wrap .at8ls-badge.at8ls-published {
+	background: #edfaef;
+	color: #1d7a3c;
+}
+
+.at8ls-wrap .at8ls-badge.at8ls-draft,
+.at8ls-wrap .at8ls-badge.at8ls-testing {
+	background: #eef3fb;
+	color: #1d4f8a;
+}
+
+.at8ls-wrap .at8ls-badge.at8ls-deprecated,
+.at8ls-wrap .at8ls-badge.at8ls-withdrawn {
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+.at8ls-wrap .at8ls-badge.at8ls-staging,
+.at8ls-wrap .at8ls-badge.at8ls-development {
+	background: #eef3fb;
+	color: #1d4f8a;
 }
 
 .at8ls-wrap .at8ls-actions {

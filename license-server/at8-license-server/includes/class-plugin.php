@@ -44,10 +44,16 @@ class Plugin {
 	}
 
 	/**
+	 * Cron hook that trims the audit log.
+	 */
+	const CRON_PURGE = 'at8ls_audit_purge';
+
+	/**
 	 * Register everything.
 	 */
 	private function __construct() {
 		add_action( 'init', array( __CLASS__, 'maybe_upgrade' ), 1 );
+		add_action( self::CRON_PURGE, array( __NAMESPACE__ . '\\Audit', 'purge_expired' ) );
 
 		$modules = array( 'rest', 'admin' );
 
@@ -95,17 +101,27 @@ class Plugin {
 		 * plain file to whoever asks for it.
 		 */
 		Package::harden();
+
+		if ( ! wp_next_scheduled( self::CRON_PURGE ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', self::CRON_PURGE );
+		}
 	}
 
 	/**
 	 * Called when the plugin is deactivated.
 	 *
 	 * Keys are deliberately kept: deactivating a plugin is not the same as
-	 * deciding to stop honouring licences that were already sold.
+	 * deciding to stop honouring licences that were already sold. The audit
+	 * log is kept for the same reason — it is a commercial record, and it
+	 * outlives both the plugin being switched off and the licence it describes.
 	 *
 	 * @return void
 	 */
 	public static function deactivate() {
-		// Nothing to clean up here; uninstall.php does that.
+		$scheduled = wp_next_scheduled( self::CRON_PURGE );
+
+		if ( $scheduled ) {
+			wp_unschedule_event( $scheduled, self::CRON_PURGE );
+		}
 	}
 }

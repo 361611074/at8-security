@@ -24,7 +24,7 @@ const KEY_GROUP_LEN = 5;
 /**
  * Table names, resolved at call time so a multisite install picks the right one.
  *
- * @return array{licenses:string, sites:string}
+ * @return array{licenses:string, sites:string, audit:string}
  */
 function tables() {
 	global $wpdb;
@@ -32,7 +32,86 @@ function tables() {
 	return array(
 		'licenses' => $wpdb->prefix . 'at8_licenses',
 		'sites'    => $wpdb->prefix . 'at8_license_sites',
+		'audit'    => $wpdb->prefix . 'at8_audit_logs',
 	);
+}
+
+/**
+ * The environments a site may report.
+ *
+ * A licence sold for one production site is often first installed on a
+ * staging copy; the value is recorded so that is visible rather than guessed.
+ *
+ * @return string[]
+ */
+function environments() {
+	return array( 'production', 'staging', 'development' );
+}
+
+/**
+ * Fold a reported environment onto the known list.
+ *
+ * @param string $environment Raw value from a request.
+ * @return string One of environments().
+ */
+function normalize_environment( $environment ) {
+	$environment = sanitize_key( (string) $environment );
+
+	return in_array( $environment, environments(), true ) ? $environment : 'production';
+}
+
+/**
+ * Stable fingerprint of a site, stored alongside the domain.
+ *
+ * A hash rather than the raw value keeps a future "does this licence follow
+ * the site or the address" decision possible without another migration.
+ *
+ * @param string $domain Normalised domain.
+ * @return string
+ */
+function site_hash( $domain ) {
+	$domain = normalize_domain( $domain );
+
+	return '' === $domain ? '' : md5( $domain );
+}
+
+/**
+ * Read a version string from a request body.
+ *
+ * Two spellings are accepted on purpose: the client distributed before the
+ * field names were settled sends `wp` / `php`, the documented shape sends
+ * `wp_version` / `php_version`. Supporting both means the server can be
+ * updated before the sites are, which is the order updates actually happen in.
+ *
+ * @param array<string, mixed> $payload Request body.
+ * @param string[]             $names   Candidate field names, in order.
+ * @return string
+ */
+function payload_version( $payload, $names ) {
+	foreach ( (array) $names as $name ) {
+		if ( isset( $payload[ $name ] ) && '' !== (string) $payload[ $name ] ) {
+			return substr( sanitize_text_field( (string) $payload[ $name ] ), 0, 20 );
+		}
+	}
+
+	return '';
+}
+
+/**
+ * Read a URL field from a request body, ready for storage.
+ *
+ * @param array<string, mixed> $payload Request body.
+ * @param string               $field   Field name.
+ * @return string
+ */
+function site_url_from( $payload, $field ) {
+	if ( empty( $payload[ $field ] ) ) {
+		return '';
+	}
+
+	$url = esc_url_raw( (string) $payload[ $field ] );
+
+	return substr( (string) $url, 0, 255 );
 }
 
 /**

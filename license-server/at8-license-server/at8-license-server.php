@@ -3,7 +3,7 @@
  * Plugin Name:       At8 License Server
  * Plugin URI:        https://www.at8.fun/
  * Description:       Issues and validates licence keys for the add-ons sold from this site, and serves their update packages.
- * Version:           1.0.1
+ * Version:           1.1.0
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Tested up to:      7.1
@@ -26,13 +26,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AT8LS_VERSION', '1.0.1' );
+define( 'AT8LS_VERSION', '1.1.0' );
 define( 'AT8LS_FILE', __FILE__ );
 define( 'AT8LS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AT8LS_URL', plugin_dir_url( __FILE__ ) );
 define( 'AT8LS_BASENAME', plugin_basename( __FILE__ ) );
 define( 'AT8LS_MIN_PHP', '7.4' );
+
+/*
+ * The endpoint address the platform uses. The first release of the client was
+ * shipped with `at8-license/v1`, so both namespaces are registered and the
+ * older one is kept for as long as a site might still be calling it.
+ */
 define( 'AT8LS_REST_NAMESPACE', 'at8-license/v1' );
+define( 'AT8LS_REST_CANONICAL', 'at8/v1' );
 
 if ( version_compare( PHP_VERSION, AT8LS_MIN_PHP, '<' ) ) {
 	add_action(
@@ -56,6 +63,7 @@ if ( version_compare( PHP_VERSION, AT8LS_MIN_PHP, '<' ) ) {
 
 require_once AT8LS_DIR . 'includes/helpers.php';
 require_once AT8LS_DIR . 'includes/class-db.php';
+require_once AT8LS_DIR . 'includes/class-audit.php';
 require_once AT8LS_DIR . 'includes/class-keys.php';
 require_once AT8LS_DIR . 'includes/class-package.php';
 require_once AT8LS_DIR . 'includes/class-rest.php';

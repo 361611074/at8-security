@@ -57,55 +57,140 @@ class Rest {
 	public function register() {
 		$public = array( $this, 'allow_any_caller' );
 
-		foreach ( array( 'activate', 'validate', 'deactivate', 'update' ) as $route ) {
+		/*
+		 * Two namespaces, one implementation.
+		 *
+		 * `at8/v1` is the platform-wide address every AT8 product will use.
+		 * `at8-license/v1` is what the first build of the client was shipped
+		 * with, and it keeps working: a customer's site cannot be updated and
+		 * re-pointed in the same breath as the server, and a licence endpoint
+		 * that vanishes during an update would lock people out of updates.
+		 */
+		$namespaces = array( AT8LS_REST_NAMESPACE, AT8LS_REST_CANONICAL );
+
+		foreach ( $namespaces as $namespace ) {
+			foreach ( array( 'activate', 'validate', 'deactivate', 'update' ) as $route ) {
+				register_rest_route(
+					$namespace,
+					'/' . $route,
+					array(
+						'methods'             => 'POST',
+						'callback'            => array( $this, 'handle_' . $route ),
+						'permission_callback' => $public,
+						'args'                => $this->route_args( $route ),
+					)
+				);
+			}
+
 			register_rest_route(
-				AT8LS_REST_NAMESPACE,
-				'/' . $route,
+				$namespace,
+				'/package',
 				array(
-					'methods'             => 'POST',
-					'callback'            => array( $this, 'handle_' . $route ),
+					'methods'             => 'GET',
+					'callback'            => array( $this, 'handle_package' ),
+					/*
+					 * The token in the query string is the credential: it is
+					 * signed with a site secret and expires. There is no
+					 * WordPress user to check a capability against on a
+					 * customer's update run.
+					 */
 					'permission_callback' => $public,
 					'args'                => array(
-						'license' => array(
-							'type'        => 'string',
-							'required'    => 'deactivate' !== $route,
-							'description' => __( 'The licence key.', 'at8-license-server' ),
-						),
-						'domain'  => array(
+						'token' => array(
 							'type'        => 'string',
 							'required'    => true,
-							'description' => __( 'Hostname of the site making the call.', 'at8-license-server' ),
-						),
-						'product' => array(
-							'type'        => 'string',
-							'required'    => true,
-							'description' => __( 'Product slug the key is for.', 'at8-license-server' ),
+							'description' => __( 'Signed download token.', 'at8-license-server' ),
 						),
 					),
 				)
 			);
 		}
+	}
 
-		register_rest_route(
-			AT8LS_REST_NAMESPACE,
-			'/package',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'handle_package' ),
-				/*
-				 * The token in the query string is the credential: it is signed
-				 * with a site secret and expires. There is no WordPress user to
-				 * check a capability against on a customer's update run.
-				 */
-				'permission_callback' => $public,
-				'args'                => array(
-					'token' => array(
-						'type'        => 'string',
-						'required'    => true,
-						'description' => __( 'Signed download token.', 'at8-license-server' ),
-					),
-				),
-			)
+	/**
+	 * The accepted body of a licence call.
+	 *
+	 * Two sets of names are declared for the same values. `domain`, `wp` and
+	 * `php` are what the first client sends; `site_url`, `home_url`, `wp_version`,
+	 * `php_version` and `environment` are the documented shape. Accepting both
+	 * is what lets the server be upgraded first — which is the only order that
+	 * does not break live sites.
+	 *
+	 * @param string $route Route name.
+	 * @return array<string, mixed>
+	 */
+	private function route_args( $route ) {
+		return array(
+			'license'     => array(
+				'type'        => 'string',
+				'required'    => 'deactivate' !== $route,
+				'description' => __( 'The licence key.', 'at8-license-server' ),
+			),
+			'domain'      => array(
+				'type'        => 'string',
+				'required'    => false,
+				'description' => __( 'Hostname of the site making the call. site_url is accepted in its place.', 'at8-license-server' ),
+			),
+			'site_url'    => array(
+				'type'        => 'string',
+				'required'    => false,
+				'description' => __( 'Full URL of the site making the call.', 'at8-license-server' ),
+			),
+			'home_url'    => array(
+				'type'        => 'string',
+				'required'    => false,
+				'description' => __( 'Home URL, when it differs from the site URL.', 'at8-license-server' ),
+			),
+			'product'     => array(
+				'type'        => 'string',
+				'required'    => true,
+				'description' => __( 'Product slug the key is for.', 'at8-license-server' ),
+			),
+			'wp_version'  => array(
+				'type'        => 'string',
+				'required'    => false,
+				'description' => __( 'WordPress version of the calling site.', 'at8-license-server' ),
+			),
+			'php_version' => array(
+				'type'        => 'string',
+				'required'    => false,
+				'description' => __( 'PHP version of the calling site.', 'at8-license-server' ),
+			),
+			'wp'          => array(
+				'type'        => 'string',
+				'required'    => false,
+				'description' => __( 'Legacy spelling of wp_version.', 'at8-license-server' ),
+			),
+			'php'         => array(
+				'type'        => 'string',
+				'required'    => false,
+				'description' => __( 'Legacy spelling of php_version.', 'at8-license-server' ),
+			),
+			'environment' => array(
+				'type'        => 'string',
+				'required'    => false,
+				'description' => __( 'production, staging or development.', 'at8-license-server' ),
+			),
+		);
+	}
+
+	/**
+	 * The body of a call, in the shape the licence layer reads.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return array<string, mixed>
+	 */
+	private function payload( $request ) {
+		return array(
+			'domain'      => (string) $request->get_param( 'domain' ),
+			'site_url'    => (string) $request->get_param( 'site_url' ),
+			'home_url'    => (string) $request->get_param( 'home_url' ),
+			'product'     => (string) $request->get_param( 'product' ),
+			'wp_version'  => (string) $request->get_param( 'wp_version' ),
+			'php_version' => (string) $request->get_param( 'php_version' ),
+			'wp'          => (string) $request->get_param( 'wp' ),
+			'php'         => (string) $request->get_param( 'php' ),
+			'environment' => (string) $request->get_param( 'environment' ),
 		);
 	}
 
@@ -136,16 +221,7 @@ class Rest {
 		}
 
 		return rest_ensure_response(
-			Keys::verify(
-				$key,
-				array(
-					'domain'  => (string) $request->get_param( 'domain' ),
-					'product' => (string) $request->get_param( 'product' ),
-					'wp'      => (string) $request->get_param( 'wp' ),
-					'php'     => (string) $request->get_param( 'php' ),
-				),
-				true
-			)
+			Keys::verify( $key, $this->payload( $request ), true )
 		);
 	}
 
@@ -167,14 +243,7 @@ class Rest {
 		}
 
 		return rest_ensure_response(
-			Keys::verify(
-				$key,
-				array(
-					'domain'  => (string) $request->get_param( 'domain' ),
-					'product' => (string) $request->get_param( 'product' ),
-				),
-				false
-			)
+			Keys::verify( $key, $this->payload( $request ), false )
 		);
 	}
 
@@ -186,10 +255,7 @@ class Rest {
 	 */
 	public function handle_deactivate( $request ) {
 		return rest_ensure_response(
-			Keys::release(
-				$this->key( $request ),
-				array( 'domain' => (string) $request->get_param( 'domain' ) )
-			)
+			Keys::release( $this->key( $request ), $this->payload( $request ) )
 		);
 	}
 
@@ -202,24 +268,20 @@ class Rest {
 	public function handle_update( $request ) {
 		$key     = $this->key( $request );
 		$product = sanitize_key( (string) $request->get_param( 'product' ) );
+		$payload = $this->payload( $request );
+
+		$payload['product'] = $product;
 
 		// Re-check the key here: handing a download link to a site whose licence
 		// has since been revoked would undo the point of revoking it.
-		$check = Keys::verify(
-			$key,
-			array(
-				'domain'  => (string) $request->get_param( 'domain' ),
-				'product' => $product,
-			),
-			false
-		);
+		$check = Keys::verify( $key, $payload, false );
 
 		if ( empty( $check['valid'] ) ) {
 			return rest_ensure_response( $check );
 		}
 
 		$row     = Keys::find( $key );
-		$release = Package::get( $product );
+		$release = Package::published( $product );
 
 		if ( ! $row || empty( $release['version'] ) ) {
 			return rest_ensure_response(
@@ -335,6 +397,20 @@ class Rest {
 		$contents = $wp_filesystem->get_contents( $path );
 
 		if ( false === $contents ) {
+			status_header( 500 );
+			wp_die(
+				esc_html__( 'The package could not be read.', 'at8-license-server' ),
+				esc_html__( 'Download failed', 'at8-license-server' ),
+				array( 'response' => 500 )
+			);
+		}
+
+		/*
+		 * Compare the bytes against the fingerprint taken when they were
+		 * uploaded. A package that was replaced, truncated or partly written
+		 * on disk is refused here rather than installed on a customer's site.
+		 */
+		if ( ! Package::verify_hash( (string) $payload['product'], (string) $contents ) ) {
 			status_header( 500 );
 			wp_die(
 				esc_html__( 'The package could not be read.', 'at8-license-server' ),

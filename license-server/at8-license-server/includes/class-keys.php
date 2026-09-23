@@ -16,9 +16,24 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Keys {
 
-	const STATUS_ACTIVE   = 'active';
-	const STATUS_DISABLED = 'disabled';
-	const STATUS_REVOKED  = 'revoked';
+	const STATUS_ACTIVE    = 'active';
+	const STATUS_DISABLED  = 'disabled';
+	const STATUS_SUSPENDED = 'suspended';
+	const STATUS_REVOKED   = 'revoked';
+
+	/**
+	 * Every status a licence may hold.
+	 *
+	 * `suspended` sits between disabled and revoked on purpose: a failed
+	 * payment or a support dispute should be reversible, while doing it with
+	 * `revoked` reads as permanent and cannot be walked back in the audit
+	 * trail. A suspended key answers exactly like a disabled one.
+	 *
+	 * @return string[]
+	 */
+	public static function statuses() {
+		return array( self::STATUS_ACTIVE, self::STATUS_DISABLED, self::STATUS_SUSPENDED, self::STATUS_REVOKED );
+	}
 
 	/**
 	 * Every licence, newest first.
@@ -138,17 +153,33 @@ class Keys {
 				'note'        => $note,
 				'created_at'  => $now,
 				'created_by'  => get_current_user_id(),
+				'updated_at'  => $now,
 			);
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$ok = $wpdb->insert(
 				$names['licenses'],
 				$data,
-				array( '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d' )
+				array( '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%d' )
 			);
 
 			if ( $ok ) {
-				return (int) $wpdb->insert_id;
+				$id = (int) $wpdb->insert_id;
+
+				Audit::record(
+					'license.created',
+					'license',
+					$id,
+					array(
+						'license_id' => $id,
+						'product'    => $product,
+						'plan'       => (string) $data['plan'],
+						'days'       => $days,
+						'max_sites'  => (int) $data['max_sites'],
+					)
+				);
+
+				return $id;
 			}
 		}
 
@@ -165,9 +196,13 @@ class Keys {
 	public static function set_status( $id, $status ) {
 		global $wpdb;
 
-		$allowed = array( self::STATUS_ACTIVE, self::STATUS_DISABLED, self::STATUS_REVOKED );
+		if ( ! in_array( $status, self::statuses(), true ) ) {
+			return false;
+		}
 
-		if ( ! in_array( $status, $allowed, true ) ) {
+		$before = self::get( $id );
+
+		if ( ! $before ) {
 			return false;
 		}
 
@@ -176,13 +211,36 @@ class Keys {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$ok = $wpdb->update(
 			$names['licenses'],
-			array( 'status' => $status ),
+			array(
+				'status'     => $status,
+				'updated_at' => time(),
+			),
 			array( 'id' => (int) $id ),
-			array( '%s' ),
+			array( '%s', '%d' ),
 			array( '%d' )
 		);
 
-		return false !== $ok;
+		if ( false === $ok ) {
+			return false;
+		}
+
+		/*
+		 * A status change is the decision a customer will ask about later, so
+		 * it is recorded with both ends of the move.
+		 */
+		Audit::record(
+			'license.' . $status,
+			'license',
+			(int) $id,
+			array(
+				'license_id' => (int) $id,
+				'product'    => (string) $before['product'],
+				'from'       => (string) $before['status'],
+				'to'         => (string) $status,
+			)
+		);
+
+		return true;
 	}
 
 	/**
@@ -200,13 +258,30 @@ class Keys {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$ok = $wpdb->update(
 			$names['licenses'],
-			array( 'max_sites' => max( 0, (int) $sites ) ),
+			array(
+				'max_sites'  => max( 0, (int) $sites ),
+				'updated_at' => time(),
+			),
 			array( 'id' => (int) $id ),
-			array( '%d' ),
+			array( '%d', '%d' ),
 			array( '%d' )
 		);
 
-		return false !== $ok;
+		if ( false === $ok ) {
+			return false;
+		}
+
+		Audit::record(
+			'license.sites_changed',
+			'license',
+			(int) $id,
+			array(
+				'license_id' => (int) $id,
+				'max_sites'  => max( 0, (int) $sites ),
+			)
+		);
+
+		return true;
 	}
 
 	/**
@@ -224,13 +299,32 @@ class Keys {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$ok = $wpdb->update(
 			$names['licenses'],
-			array( 'note' => sanitize_text_field( (string) $note ) ),
+			array(
+				'note'       => sanitize_text_field( (string) $note ),
+				'updated_at' => time(),
+			),
 			array( 'id' => (int) $id ),
-			array( '%s' ),
+			array( '%s', '%d' ),
 			array( '%d' )
 		);
 
-		return false !== $ok;
+		if ( false === $ok ) {
+			return false;
+		}
+
+		/*
+		 * The note itself is not copied into the log. It is free text that
+		 * tends to hold a customer's name or order number, and the audit trail
+		 * only needs to show that somebody edited it.
+		 */
+		Audit::record(
+			'license.note_changed',
+			'license',
+			(int) $id,
+			array( 'license_id' => (int) $id )
+		);
+
+		return true;
 	}
 
 	/**
@@ -243,6 +337,7 @@ class Keys {
 		global $wpdb;
 
 		$names = tables();
+		$row   = self::get( $id );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->delete( $names['sites'], array( 'license_id' => (int) $id ), array( '%d' ) );
@@ -250,7 +345,27 @@ class Keys {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$ok = $wpdb->delete( $names['licenses'], array( 'id' => (int) $id ), array( '%d' ) );
 
-		return false !== $ok;
+		if ( false === $ok ) {
+			return false;
+		}
+
+		/*
+		 * The log entry outlives the licence: it is the only remaining proof
+		 * that this key ever existed, and the log is never deleted with a
+		 * licence, only with the plugin.
+		 */
+		Audit::record(
+			'license.deleted',
+			'license',
+			(int) $id,
+			array(
+				'license_id' => (int) $id,
+				'product'    => $row ? (string) $row['product'] : '',
+				'status'     => $row ? (string) $row['status'] : '',
+			)
+		);
+
+		return true;
 	}
 
 	/**
@@ -311,9 +426,31 @@ class Keys {
 		$names = tables();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row = $wpdb->get_row(
+			$wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', $names['sites'], (int) $site_id ),
+			ARRAY_A
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$ok = $wpdb->delete( $names['sites'], array( 'id' => (int) $site_id ), array( '%d' ) );
 
-		return false !== $ok;
+		if ( false === $ok ) {
+			return false;
+		}
+
+		Audit::record(
+			'site.removed',
+			'license',
+			is_array( $row ) ? (int) $row['license_id'] : 0,
+			array(
+				'license_id'  => is_array( $row ) ? (int) $row['license_id'] : 0,
+				'domain'      => is_array( $row ) ? (string) $row['domain'] : '',
+				'environment' => is_array( $row ) ? (string) $row['environment'] : '',
+				'by'          => 'admin',
+			)
+		);
+
+		return true;
 	}
 
 	/**
@@ -370,7 +507,7 @@ class Keys {
 	 * @return array<string, mixed> Response body.
 	 */
 	public static function verify( $key, $payload, $bind ) {
-		$domain  = normalize_domain( isset( $payload['domain'] ) ? (string) $payload['domain'] : '' );
+		$domain  = normalize_domain( self::domain_from( $payload ) );
 		$product = isset( $payload['product'] ) ? sanitize_key( (string) $payload['product'] ) : '';
 
 		if ( '' === $key ) {
@@ -384,26 +521,44 @@ class Keys {
 		$row = self::find( $key );
 
 		if ( ! $row ) {
+			/*
+			 * A key nobody issued being presented is either a typo or somebody
+			 * guessing. Both are worth seeing in the log; neither is stored
+			 * with the key itself.
+			 */
+			self::record_failure( 'unknown_key', $domain, $product );
+
 			return self::answer( false, 'rejected', __( 'This licence key is not recognised.', 'at8-license-server' ) );
 		}
 
 		if ( self::STATUS_ACTIVE !== (string) $row['status'] ) {
+			self::record_failure( (string) $row['status'], $domain, $product, (int) $row['id'] );
+
+			$messages = array(
+				self::STATUS_REVOKED   => __( 'This licence key has been revoked.', 'at8-license-server' ),
+				self::STATUS_SUSPENDED => __( 'This licence key has been suspended. Please contact support.', 'at8-license-server' ),
+			);
+
 			return self::answer(
 				false,
 				'inactive',
-				self::STATUS_REVOKED === (string) $row['status']
-					? __( 'This licence key has been revoked.', 'at8-license-server' )
+				isset( $messages[ (string) $row['status'] ] )
+					? $messages[ (string) $row['status'] ]
 					: __( 'This licence key has been disabled.', 'at8-license-server' )
 			);
 		}
 
 		if ( '' !== $product && (string) $row['product'] !== $product ) {
+			self::record_failure( 'wrong_product', $domain, $product, (int) $row['id'] );
+
 			return self::answer( false, 'rejected', __( 'This licence key belongs to a different product.', 'at8-license-server' ) );
 		}
 
 		$expires = (int) $row['expires'];
 
 		if ( $expires > 0 && $expires < time() ) {
+			self::record_failure( 'expired', $domain, $product, (int) $row['id'] );
+
 			return self::answer(
 				false,
 				'expired',
@@ -422,10 +577,14 @@ class Keys {
 			 * install. Say so rather than answering "valid" for a site that was
 			 * never activated.
 			 */
+			self::record_failure( 'not_bound', $domain, $product, (int) $row['id'] );
+
 			return self::answer( false, 'inactive', __( 'This site is not activated with this key.', 'at8-license-server' ) );
 		}
 
 		if ( ! $existing && $max > 0 && self::site_count( (int) $row['id'] ) >= $max ) {
+			self::record_failure( 'seat_limit', $domain, $product, (int) $row['id'] );
+
 			return self::answer(
 				false,
 				'rejected',
@@ -443,6 +602,18 @@ class Keys {
 
 		if ( ! $existing ) {
 			self::bind_site( (int) $row['id'], $domain, $payload );
+
+			Audit::record(
+				'site.activated',
+				'license',
+				(int) $row['id'],
+				array(
+					'license_id'  => (int) $row['id'],
+					'product'     => (string) $row['product'],
+					'domain'      => $domain,
+					'environment' => normalize_environment( isset( $payload['environment'] ) ? (string) $payload['environment'] : '' ),
+				)
+			);
 		} else {
 			self::touch_site( (int) $existing['id'], $payload );
 		}
@@ -477,13 +648,17 @@ class Keys {
 			array(
 				'license_id'   => $license_id,
 				'domain'       => $domain,
+				'site_url'     => site_url_from( $payload, 'site_url' ),
+				'home_url'     => site_url_from( $payload, 'home_url' ),
+				'site_hash'    => site_hash( $domain ),
+				'environment'  => normalize_environment( isset( $payload['environment'] ) ? (string) $payload['environment'] : '' ),
 				'activated_at' => time(),
 				'last_seen'    => time(),
 				'last_ip'      => client_ip(),
-				'wp_version'   => isset( $payload['wp'] ) ? substr( sanitize_text_field( (string) $payload['wp'] ), 0, 20 ) : '',
-				'php_version'  => isset( $payload['php'] ) ? substr( sanitize_text_field( (string) $payload['php'] ), 0, 20 ) : '',
+				'wp_version'   => payload_version( $payload, array( 'wp_version', 'wp' ) ),
+				'php_version'  => payload_version( $payload, array( 'php_version', 'php' ) ),
 			),
-			array( '%d', '%s', '%d', '%d', '%s', '%s', '%s' )
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s' )
 		);
 
 		return (bool) $ok;
@@ -507,11 +682,12 @@ class Keys {
 			array(
 				'last_seen'   => time(),
 				'last_ip'     => client_ip(),
-				'wp_version'  => isset( $payload['wp'] ) ? substr( sanitize_text_field( (string) $payload['wp'] ), 0, 20 ) : '',
-				'php_version' => isset( $payload['php'] ) ? substr( sanitize_text_field( (string) $payload['php'] ), 0, 20 ) : '',
+				'wp_version'  => payload_version( $payload, array( 'wp_version', 'wp' ) ),
+				'php_version' => payload_version( $payload, array( 'php_version', 'php' ) ),
+				'environment' => normalize_environment( isset( $payload['environment'] ) ? (string) $payload['environment'] : '' ),
 			),
 			array( 'id' => (int) $site_id ),
-			array( '%d', '%s', '%s', '%s' ),
+			array( '%d', '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
 	}
@@ -526,7 +702,7 @@ class Keys {
 	public static function release( $key, $payload ) {
 		global $wpdb;
 
-		$domain = normalize_domain( isset( $payload['domain'] ) ? (string) $payload['domain'] : '' );
+		$domain = normalize_domain( self::domain_from( $payload ) );
 		$row    = self::find( $key );
 
 		if ( ! $row || '' === $domain ) {
@@ -550,9 +726,68 @@ class Keys {
 			array( '%d', '%s' )
 		);
 
+		Audit::record(
+			'site.released',
+			'license',
+			(int) $row['id'],
+			array(
+				'license_id' => (int) $row['id'],
+				'domain'     => $domain,
+				'by'         => 'client',
+			)
+		);
+
 		return array(
 			'valid'   => true,
 			'message' => __( 'Released. The key can now be used on another site.', 'at8-license-server' ),
+		);
+	}
+
+	/**
+	 * The site identity from a request, whichever field it arrived in.
+	 *
+	 * `domain` is what the first client sends; `site_url` is the documented
+	 * field. A full URL is fine either way — normalize_domain() reduces it to
+	 * a hostname, so https://www.example.com/ and example.com are one site.
+	 *
+	 * @param array<string, mixed> $payload Request body.
+	 * @return string
+	 */
+	private static function domain_from( $payload ) {
+		foreach ( array( 'domain', 'site_url', 'home_url' ) as $field ) {
+			if ( isset( $payload[ $field ] ) && '' !== (string) $payload[ $field ] ) {
+				return (string) $payload[ $field ];
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Write down a call that was turned away.
+	 *
+	 * Only refusals are logged, never a routine heartbeat: a working licence
+	 * checking in twice a day would fill the table with rows nobody reads,
+	 * while a refusal is either a customer in trouble or somebody guessing —
+	 * both of which are worth being able to look up.
+	 *
+	 * @param string $reason  Why it was refused.
+	 * @param string $domain  Normalised domain.
+	 * @param string $product Product slug from the request.
+	 * @param int    $license_id Licence id, 0 when the key was unknown.
+	 * @return void
+	 */
+	private static function record_failure( $reason, $domain, $product, $license_id = 0 ) {
+		Audit::record(
+			'license.refused',
+			'license',
+			(int) $license_id,
+			array(
+				'license_id' => (int) $license_id,
+				'reason'     => (string) $reason,
+				'domain'     => (string) $domain,
+				'product'    => (string) $product,
+			)
 		);
 	}
 

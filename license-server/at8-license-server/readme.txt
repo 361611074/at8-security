@@ -4,7 +4,7 @@ Tags: license, licensing, updates
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,7 +20,8 @@ sites that hold a valid key.
 It is not meant to run on a customer's site and it is not distributed through
 the WordPress plugin directory.
 
-Endpoints, all under `/wp-json/at8-license/v1/`:
+Endpoints, under `/wp-json/at8/v1/` (and at the original
+`/wp-json/at8-license/v1/` address, which is kept for sites that still call it):
 
 * `POST activate` — bind a key to a site.
 * `POST validate` — re-check a key without binding anything.
@@ -30,7 +31,16 @@ Endpoints, all under `/wp-json/at8-license/v1/`:
 
 Keys are stored in their own table with an index on the key, site bindings in a
 second table, and every issued key keeps a record of the sites using it so one
-can be released when a customer moves to a new domain.
+can be released when a customer moves to a new domain. A third table holds the
+audit trail: who created, changed or removed a licence, and from where.
+
+Packages are published with the SHA-256 of the file as it was uploaded, and each
+download is checked against it, so a package replaced on disk is refused rather
+than installed. Download links are signed and expire after thirty minutes.
+
+Licence records are commercial records. Deleting this plugin keeps them by
+default; the audit screen has a switch, and `AT8LS_PURGE_ON_UNINSTALL` in
+wp-config.php decides it per site.
 
 == Installation ==
 
@@ -52,7 +62,29 @@ Yes. Release the site from the **Activated sites** tab, or use the release
 button on the customer's own settings screen, and activate the key on the new
 site.
 
+== Privacy ==
+
+This plugin runs on the vendor's own site, not on a customer's. It receives
+data and sends none.
+
+It stores, for each activated site: the hostname, the site and home URL, the
+WordPress and PHP version, the reporting environment, the source IP address of
+the call, and when the site last checked in. That information exists to run the
+licence — to know which site holds a seat, to tell a customer which site to
+release, and to notice a key being used somewhere it was not sold to. It is not
+sold, shared or used for anything else.
+
 == Changelog ==
+
+= 1.1.0 =
+* Audit log: every licence decision is recorded with the actor, the address it came from and both ends of a status change. Keys themselves are never written to it. Entries are trimmed by a daily job, and the retention window is configurable.
+* Download links now expire after thirty minutes instead of six hours.
+* Each package is fingerprinted with SHA-256 at upload and checked on every download.
+* Releases have a status — draft, testing, published, deprecated, withdrawn — and only a published build is offered to licensed sites. Withdrawing keeps the record and the file.
+* Licences can be suspended: a reversible stop that is not a revocation.
+* Site records carry the full site and home URL, an environment (production, staging, development) and a site hash.
+* The REST API also answers at `/wp-json/at8/v1/`, and accepts the documented field names (site_url, home_url, wp_version, php_version, environment) alongside the original ones.
+* Deleting the plugin no longer destroys licence records: they are kept unless the site owner opts in, on the audit screen or with AT8LS_PURGE_ON_UNINSTALL.
 
 = 1.0.1 =
 * Bundled a Simplified Chinese translation for the licence management screens.

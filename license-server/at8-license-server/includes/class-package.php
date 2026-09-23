@@ -21,7 +21,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Package {
 
 	const OPTION_RELEASES = 'at8ls_releases';
-	const TOKEN_TTL       = 21600; // Six hours is plenty for one update run.
+
+	/**
+	 * How long a download link stays valid.
+	 *
+	 * The updater asks for the link and fetches it in the same request cycle,
+	 * so half an hour is generous. The earlier six hours were not: revoking a
+	 * licence inside that window still left a working download URL in the
+	 * wild, which is the whole point of keeping the window short.
+	 */
+	const TOKEN_TTL = 1800;
+
+	/**
+	 * The statuses a release moves through.
+	 *
+	 * `withdrawn` rather than a deleted row: a build that was pulled is a fact
+	 * worth keeping, and the file on disk is the only copy of it.
+	 *
+	 * @return string[]
+	 */
+	public static function statuses() {
+		return array( 'draft', 'testing', 'published', 'deprecated', 'withdrawn' );
+	}
 
 	/**
 	 * Every release, keyed by product.
@@ -47,13 +68,46 @@ class Package {
 	}
 
 	/**
+	 * Status of a release.
+	 *
+	 * A record written before statuses existed has none, and was live; it is
+	 * read as published so an upgrade does not silently stop offering updates.
+	 *
+	 * @param string $product Product slug.
+	 * @return string
+	 */
+	public static function status( $product ) {
+		$release = self::get( $product );
+
+		return isset( $release['status'] ) && '' !== (string) $release['status']
+			? (string) $release['status']
+			: 'published';
+	}
+
+	/**
+	 * The release a client should be offered, or an empty array.
+	 *
+	 * @param string $product Product slug.
+	 * @return array<string, mixed>
+	 */
+	public static function published( $product ) {
+		$release = self::get( $product );
+
+		if ( empty( $release['version'] ) || 'published' !== self::status( $product ) ) {
+			return array();
+		}
+
+		return $release;
+	}
+
+	/**
 	 * The currently published version, or an empty string.
 	 *
 	 * @param string $product Product slug.
 	 * @return string
 	 */
 	public static function version( $product ) {
-		$release = self::get( $product );
+		$release = self::published( $product );
 
 		return isset( $release['version'] ) ? (string) $release['version'] : '';
 	}
@@ -68,7 +122,7 @@ class Package {
 	 * @return string
 	 */
 	public static function path( $product ) {
-		$release = self::get( $product );
+		$release = self::published( $product );
 
 		if ( empty( $release['file'] ) ) {
 			return '';
@@ -87,33 +141,106 @@ class Package {
 	 * @return void
 	 */
 	public static function save( $product, $values ) {
-		$all = self::all();
+		$all      = self::all();
+		$previous = isset( $all[ $product ] ) && is_array( $all[ $product ] ) ? $all[ $product ] : array();
+		$status   = isset( $values['status'] ) ? (string) $values['status'] : 'published';
+		$status   = in_array( $status, self::statuses(), true ) ? $status : 'published';
+		$now      = time();
+
+		$published_at = isset( $previous['published_at'] ) ? (int) $previous['published_at'] : 0;
+
+		if ( 'published' === $status && 0 === $published_at ) {
+			$published_at = $now;
+		}
 
 		$all[ $product ] = array(
 			'version'      => isset( $values['version'] ) ? (string) $values['version'] : '',
-			'file'         => isset( $values['file'] ) ? (string) $values['file'] : '',
+			'file'         => isset( $values['file'] ) && '' !== (string) $values['file']
+				? (string) $values['file']
+				: ( isset( $previous['file'] ) ? (string) $previous['file'] : '' ),
 			'changelog'    => isset( $values['changelog'] ) ? (string) $values['changelog'] : '',
-			'requires'     => isset( $values['requires'] ) ? (string) $values['requires'] : '6.4',
+			'requires'     => isset( $values['requires'] ) && '' !== (string) $values['requires'] ? (string) $values['requires'] : '6.4',
 			'tested'       => isset( $values['tested'] ) ? (string) $values['tested'] : '',
-			'requires_php' => isset( $values['requires_php'] ) ? (string) $values['requires_php'] : '7.4',
-			'uploaded_at'  => time(),
+			'requires_php' => isset( $values['requires_php'] ) && '' !== (string) $values['requires_php'] ? (string) $values['requires_php'] : '7.4',
+			/*
+			 * The hash and size belong to the file, not to the form: a value
+			 * arriving with this call comes from the upload that just landed,
+			 * and otherwise the previous one is carried over so that saving a
+			 * changelog edit does not wipe the fingerprint of the package on
+			 * disk.
+			 */
+			'sha256'       => isset( $values['sha256'] ) && '' !== (string) $values['sha256']
+				? (string) $values['sha256']
+				: ( isset( $previous['sha256'] ) ? (string) $previous['sha256'] : '' ),
+			'package_size' => isset( $values['package_size'] ) && (int) $values['package_size'] > 0
+				? (int) $values['package_size']
+				: ( isset( $previous['package_size'] ) ? (int) $previous['package_size'] : 0 ),
+			'status'       => $status,
+			'uploaded_at'  => $now,
+			'published_at' => $published_at,
 		);
 
 		update_option( self::OPTION_RELEASES, $all, false );
+
+		Audit::record(
+			'release.' . $status,
+			'release',
+			0,
+			array(
+				'product' => (string) $product,
+				'version' => (string) $all[ $product ]['version'],
+				'file'    => (string) $all[ $product ]['file'],
+			)
+		);
 	}
 
 	/**
-	 * Forget a release. The file is left on disk on purpose.
+	 * Move a release to another status.
 	 *
 	 * @param string $product Product slug.
-	 * @return void
+	 * @param string $status  One of statuses().
+	 * @return bool
 	 */
-	public static function forget( $product ) {
+	public static function set_status( $product, $status ) {
 		$all = self::all();
 
-		unset( $all[ $product ] );
+		if ( ! isset( $all[ $product ] ) || ! in_array( $status, self::statuses(), true ) ) {
+			return false;
+		}
+
+		$all[ $product ]['status'] = $status;
+
+		if ( 'published' === $status && empty( $all[ $product ]['published_at'] ) ) {
+			$all[ $product ]['published_at'] = time();
+		}
 
 		update_option( self::OPTION_RELEASES, $all, false );
+
+		Audit::record(
+			'release.' . $status,
+			'release',
+			0,
+			array(
+				'product' => (string) $product,
+				'version' => isset( $all[ $product ]['version'] ) ? (string) $all[ $product ]['version'] : '',
+			)
+		);
+
+		return true;
+	}
+
+	/**
+	 * Take a release out of distribution. The record and the file both stay.
+	 *
+	 * Pulling a build is not the same as pretending it never existed: the
+	 * withdrawn row is what explains why a customer's site is on an older
+	 * version, and the file on disk is the only copy of what was shipped.
+	 *
+	 * @param string $product Product slug.
+	 * @return bool
+	 */
+	public static function forget( $product ) {
+		return self::set_status( $product, 'withdrawn' );
 	}
 
 	/**
@@ -126,7 +253,7 @@ class Package {
 	 *
 	 * @param array<string, mixed> $file    One entry from $_FILES.
 	 * @param string               $product Product slug.
-	 * @return string|\WP_Error Stored file name, or an error.
+	 * @return array<string, mixed>|\WP_Error file, sha256 and package_size.
 	 */
 	public static function store_upload( $file, $product ) {
 		unset( $product );
@@ -189,7 +316,40 @@ class Package {
 			return new \WP_Error( 'at8ls_move', __( 'The uploaded package could not be stored.', 'at8-license-server' ) );
 		}
 
-		return $name;
+		/*
+		 * Fingerprint the file as it lands, while it is known to be the bytes
+		 * that were just uploaded. It is checked again on every download, so a
+		 * package swapped on disk later is refused rather than shipped.
+		 */
+		$sha = hash_file( 'sha256', $target );
+
+		return array(
+			'file'         => $name,
+			'sha256'       => is_string( $sha ) ? $sha : '',
+			'package_size' => (int) $wp_filesystem->size( $target ),
+		);
+	}
+
+	/**
+	 * Does this package still match the hash recorded when it was uploaded?
+	 *
+	 * A release published before hashes were recorded has nothing to compare
+	 * against, and is served as it always was — the check adds certainty where
+	 * it exists rather than refusing older releases.
+	 *
+	 * @param string $product  Product slug.
+	 * @param string $contents Package bytes.
+	 * @return bool
+	 */
+	public static function verify_hash( $product, $contents ) {
+		$release  = self::published( $product );
+		$expected = isset( $release['sha256'] ) ? strtolower( (string) $release['sha256'] ) : '';
+
+		if ( '' === $expected ) {
+			return true;
+		}
+
+		return hash_equals( $expected, hash( 'sha256', (string) $contents ) );
 	}
 
 	/**
@@ -256,7 +416,7 @@ class Package {
 
 		return add_query_arg(
 			array( 'token' => $token ),
-			rest_url( AT8LS_REST_NAMESPACE . '/package' )
+			rest_url( AT8LS_REST_CANONICAL . '/package' )
 		);
 	}
 
