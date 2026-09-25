@@ -145,6 +145,12 @@ First public release. Supersedes the 1.0.x builds that were distributed privatel
 
 == Upgrade Notice ==
 
+= 2.0.3 =
+No action needed. The plugin's own screens now answer 403 rather than 500 when they are reached without permission. Nothing else changed.
+
+= 2.0.2 =
+Update if you want the Chinese admin interface, or if the plugin's request firewall ever interfered with WP-CLI or a custom cron job. The interface language now follows the site language, and the firewall no longer blocks command-line and cron requests.
+
 = 2.0.1 =
 If the custom login path ever showed you a 404, update: the entry point now accepts the address regardless of letter casing, and the settings page always shows the address that is in force.
 

@@ -218,6 +218,6 @@ readme 已声明 4 张截图：
 | 2 | 制作 `icon-128x128.png` / `icon-256x256.png` | **是** | 品牌决策，需人工 |
 | 3 | 制作 `banner-772x250.png` / `banner-1544x500.png` | **是** | 品牌决策，需人工 |
 | 4 | 素材放入 SVN `/assets` 目录（**不进插件 zip**） | 是 | 提交时 |
-| 5 | readme 的 `== Upgrade Notice ==` 补 2.0.2 / 2.0.3 条目 | 否 | 建议 |
+| 5 | readme 的 `== Upgrade Notice ==` 补 2.0.2 / 2.0.3 条目 | 否 | **已完成**（免费版补 2.0.2/2.0.3；Pro 一并补上该段） |
 
 补齐 1–4 后重跑本报告，`FREE_WORDPRESS_ORG_READY` 方可置 `YES`。

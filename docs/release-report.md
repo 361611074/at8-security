@@ -99,8 +99,8 @@ NOT READY FOR WORDPRESS.ORG SUBMISSION
 
 | 文件 | 版本 | 条目 | 字节 | MD5 | SHA256 |
 |---|---|---|---|---|---|
-| `at8-security-2.0.3.zip` | 2.0.3 | 29 | 71,861 | `a292245611042b49175e46d89edf4306` | `843f49a0ac13670fc26f55be7fc912d910050e9c4b592c67a20cd71093e9ebb7` |
-| `at8-security-pro-2.0.3.zip` | 2.0.3 | 23 | 74,266 | `0936d24a467e401889db2958b4025a89` | `9dc62554a63ab488031d4685b15ac1e46fbcfd5eafb4097a8a07036da982e7ce` |
+| `at8-security-2.0.3.zip` | 2.0.3 | 29 | 71,977 | `d159f2d4945519adc004493b6f775ac3` | `1db6b08f323b8b05d72a7dbaa905b7237a8be252d16e4d6d6a6beaf36e36da70` |
+| `at8-security-pro-2.0.3.zip` | 2.0.3 | 23 | 74,326 | `5e49c7539cc9ec939d2a14ca7fbd825a` | `9ab445b958b280aedd9f781303fce6ecd967eb37dce452c51ac9200697ab5911` |
 | `at8-license-server-1.2.0.zip` | 1.2.0 | 18 | 54,013 | `788c9fd90ee3c95886db65acf887b259` | `85437766fce0f5b8a3dd79667d5a3d1fc69efa01c940326ef1d3117c062458ed` |
 
 构建报告：`dist/BUILD-REPORT.json`（三个包 `passed: true`，0 problem）。
@@ -196,4 +196,10 @@ NOT READY FOR WORDPRESS.ORG SUBMISSION
 | 3 | 制作 `banner-772x250.png` / `banner-1544x500.png` | 同上 |
 | 4 | 素材放入 SVN `/assets` | **不进插件 zip**，WordPress.org 从 SVN 读取 |
 
-非阻塞建议：readme 的 `== Upgrade Notice ==` 补 2.0.2 / 2.0.3 条目。
+### 本轮补上的非阻塞项
+
+`== Upgrade Notice ==` 已补齐：免费版原本只有 2.0.0 / 2.0.1，现补 2.0.2 / 2.0.3；
+Pro 原本完全没有该段，一并补上。因为改动的是 readme，免费版与 Pro 的 zip 内容变了，
+上表的 MD5 / SHA256 已按重建结果更新（license-server 未改动，哈希不变）。
+
+免费版 Plugin Check 复测：**0 ERROR / 0 CRITICAL / 1 WARNING**，与本轮之前一致。

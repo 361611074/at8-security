@@ -140,3 +140,11 @@ A refusal now answers as a refusal.
 
 = 2.0.0 =
 * First release of the add-on.
+
+== Upgrade Notice ==
+
+= 2.0.3 =
+No action needed. Permission refusals from the add-on's tools and the two-factor screen now answer 403 rather than 500, and a tool request that names no action answers 400.
+
+= 2.0.2 =
+Update to get the Simplified Chinese interface.
