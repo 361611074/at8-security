@@ -7,9 +7,9 @@ Date:      2026-09-25
 Status:    NOT READY
 ```
 
-**唯一未通过项**：§69 上架素材（icon / banner / screenshots）尚未制作。
-代码、许可、安全、边界、readme、ZIP 全部 PASS。详见
-`docs/wordpress-org-compliance-report.md` 第四节。
+**未通过项**：§69 上架素材中的 icon 与 banner 尚未制作（品牌决策，需人工确认方案）。
+截图已完成，见 `wordpress-org-assets/`。代码、许可、安全、边界、readme、ZIP 全部 PASS。
+详见 `docs/wordpress-org-compliance-report.md` 第四节。
 
 ---
 
@@ -23,7 +23,7 @@ External Services:  PASS
 Tracking:           PASS
 Remote Code:        PASS
 Readme:             PASS
-Assets:             FAIL   (icon / banner / screenshots 未制作)
+Assets:             PARTIAL (截图已制作；icon / banner 未制作)
 ZIP:                PASS
 ```
 
@@ -99,7 +99,7 @@ NOT READY FOR WORDPRESS.ORG SUBMISSION
 
 | 文件 | 版本 | 条目 | 字节 | MD5 | SHA256 |
 |---|---|---|---|---|---|
-| `at8-security-2.0.3.zip` | 2.0.3 | 29 | 71,977 | `d159f2d4945519adc004493b6f775ac3` | `1db6b08f323b8b05d72a7dbaa905b7237a8be252d16e4d6d6a6beaf36e36da70` |
+| `at8-security-2.0.3.zip` | 2.0.3 | 29 | 71,974 | `9fdd38886b55f8cdd622344ff87a513a` | `ff67ab9b9669946517f822f15077d1a6d1ce68c67ee19907ff2284b2ec9e96ef` |
 | `at8-security-pro-2.0.3.zip` | 2.0.3 | 23 | 74,326 | `5e49c7539cc9ec939d2a14ca7fbd825a` | `9ab445b958b280aedd9f781303fce6ecd967eb37dce452c51ac9200697ab5911` |
 | `at8-license-server-1.2.0.zip` | 1.2.0 | 18 | 54,013 | `788c9fd90ee3c95886db65acf887b259` | `85437766fce0f5b8a3dd79667d5a3d1fc69efa01c940326ef1d3117c062458ed` |
 
@@ -191,7 +191,7 @@ NOT READY FOR WORDPRESS.ORG SUBMISSION
 
 | # | 事项 | 说明 |
 |---|---|---|
-| 1 | 制作 `screenshot-1..4.png` | 与 readme 的 `== Screenshots ==` 四条说明一一对应；插件自身界面截屏，不含品牌判断 |
+| 1 | ~~制作 `screenshot-1..4.png`~~ | **已完成**，见 `wordpress-org-assets/` 与本轮补记 |
 | 2 | 制作 `icon-128x128.png` / `icon-256x256.png` | **品牌素材**，按规范 §92 需人工确定，不由 Agent 擅自设计 |
 | 3 | 制作 `banner-772x250.png` / `banner-1544x500.png` | 同上 |
 | 4 | 素材放入 SVN `/assets` | **不进插件 zip**，WordPress.org 从 SVN 读取 |
@@ -203,3 +203,16 @@ Pro 原本完全没有该段，一并补上。因为改动的是 readme，免费
 上表的 MD5 / SHA256 已按重建结果更新（license-server 未改动，哈希不变）。
 
 免费版 Plugin Check 复测：**0 ERROR / 0 CRITICAL / 1 WARNING**，与本轮之前一致。
+
+### 本轮补上的 §69 截图
+
+`wordpress-org-assets/screenshot-1..4.png` 已制作（1280px 宽，英文界面），与 readme 的
+`== Screenshots ==` 四条说明一一对应。截图期间把测试站语言临时切到 en_US，截完已切回
+zh_CN 并验证（`at8sec-locale.py`）。
+
+readme 第 1 条说明由 "Hardening and login settings." 改为 "Hardening settings."，
+因为登录设置在本插件里是独立的 Login 标签页，截图 1 拍的是 Hardening 标签页。
+
+**截图中的审计日志为样本数据**（`at8ls-tests/seed-audit.php` 生成，地址取自 RFC 5737
+文档网段），不是真实事件记录。理由与做法见
+`docs/wordpress-org-compliance-report.md` 第四节。

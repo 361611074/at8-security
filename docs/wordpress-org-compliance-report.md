@@ -13,8 +13,8 @@
 ```text
 FREE_WORDPRESS_ORG_READY = NO
 
-原因：唯一未完成项为 §69 上架素材（icon / banner / screenshots）。
-      代码、许可、安全、边界、readme、ZIP 全部 PASS。
+原因：§69 上架素材中，icon 与 banner 尚未制作（品牌决策，需人工确认方案）。
+      截图已完成；代码、许可、安全、边界、readme、ZIP 全部 PASS。
 ```
 
 素材是可补的独立工作项，不影响代码质量；在补齐前不满足 §98 的 `Assets` 条件，
@@ -138,26 +138,43 @@ at8-security paths: .../wp-content/languages/plugins, .../wp-content/languages/t
 
 ---
 
-## 四、上架素材（§69）—— 未完成
+## 四、上架素材（§69）—— 部分完成
 
 | 素材 | 要求 | 现状 |
 |---|---|---|
-| `icon-128x128.png` / `icon-256x256.png` | 插件图标 | **未制作** |
-| `banner-772x250.png` / `banner-1544x500.png` | 插件横幅 | **未制作** |
-| `screenshot-1..4.png` | 与 readme 的 Screenshots 顺序对应 | **未制作** |
+| `icon-128x128.png` / `icon-256x256.png` | 插件图标 | **未制作**（品牌决策） |
+| `banner-772x250.png` / `banner-1544x500.png` | 插件横幅 | **未制作**（品牌决策） |
+| `screenshot-1..4.png` | 与 readme 的 Screenshots 顺序对应 | **已制作**（`wordpress-org-assets/`） |
 
-readme 已声明 4 张截图：
+### 截图 —— 已完成
 
-1. Hardening and login settings.
+在测试站上实拍，英文界面（截图期间临时把站点语言切到 en_US，截完已切回 zh_CN），
+宽 1280px，与 readme 的 4 条说明一一对应：
+
+| 文件 | 对应标签页 | 尺寸 |
+|---|---|---|
+| `screenshot-1.png` | Hardening | 1280 × 1021 |
+| `screenshot-2.png` | Firewall | 1280 × 1663 |
+| `screenshot-3.png` | Headers & CSP | 1280 × 960 |
+| `screenshot-4.png` | Tools | 1280 × 1318 |
+
+readme 的 `== Screenshots ==` 已同步为：
+
+1. Hardening settings.
 2. Firewall rules and rate limiting.
 3. Security headers and Content Security Policy.
 4. Tools: weak-password check and the audit log.
 
-**判定：FAIL（未完成）** —— 这是本次审计唯一未通过项，也是 `FREE_WORDPRESS_ORG_READY = NO`
-的唯一原因。
+第 1 条由 "Hardening and login settings." 改为 "Hardening settings."：登录设置在本插件里是
+**独立的 Login 标签页**，而截图 1 拍的是 Hardening 标签页，原措辞与图不符。
 
-**注意**：icon 与 banner 属于**品牌素材**，按规范 §92 不得由 Agent 擅自设计；
-截图是插件自身界面的截屏，不含品牌判断，可以制作。
+**截图里的审计日志是样本数据。** 测试站的日志是在 zh_CN 期间累积的，Detail 列含中文句子，
+且长达 40 行（会把截图拉到 2700px 以上）。截图前用 `at8ls-tests/seed-audit.php`
+重置为一组英文样本行，地址取自 RFC 5737 文档网段。**样本行不是真实事件记录。**
+
+**判定：截图 PASS；icon / banner FAIL（未制作）。**
+
+**注意**：icon 与 banner 属于**品牌素材**，按规范 §92 不得由 Agent 擅自设计。
 
 ---
 
@@ -188,7 +205,7 @@ readme 已声明 4 张截图：
 | 远程可执行代码 | ★★★★ | **PASS** | 无远程 JS/PHP；无 `eval` 类函数 |
 | 未声明外部服务 | ★★★★ | **PASS** | readme + privacy.md 一致 |
 | readme 规范性 | ★★★ | **PASS** | 见第三节 |
-| 上架素材 | ★★★ | **FAIL** | 见第四节，唯一未完成项 |
+| 上架素材 | ★★★ | **部分完成** | 截图已制作；icon / banner 待定（见第四节） |
 | ZIP 结构 | ★★★ | **PASS** | 见第五节 |
 | 数据库迁移破坏数据 | ★★ | **PASS** | 只 ADD COLUMN，不 DROP；带数据实测 |
 | 卸载残留 / 误删 | ★★ | **PASS** | 卸载清本站数据；license-server 默认保留商业记录 |
@@ -214,10 +231,10 @@ readme 已声明 4 张截图：
 
 | # | 事项 | 阻塞上架 | 责任 |
 |---|---|---|---|
-| 1 | 制作 `screenshot-1..4.png`（对应 readme 的 4 条说明） | **是** | 可自动完成 |
-| 2 | 制作 `icon-128x128.png` / `icon-256x256.png` | **是** | 品牌决策，需人工 |
-| 3 | 制作 `banner-772x250.png` / `banner-1544x500.png` | **是** | 品牌决策，需人工 |
+| 1 | 制作 `screenshot-1..4.png`（对应 readme 的 4 条说明） | ~~是~~ | **已完成**（见第四节） |
+| 2 | 制作 `icon-128x128.png` / `icon-256x256.png` | **是** | 品牌决策，需人工确认方案 |
+| 3 | 制作 `banner-772x250.png` / `banner-1544x500.png` | **是** | 品牌决策，需人工确认方案 |
 | 4 | 素材放入 SVN `/assets` 目录（**不进插件 zip**） | 是 | 提交时 |
 | 5 | readme 的 `== Upgrade Notice ==` 补 2.0.2 / 2.0.3 条目 | 否 | **已完成**（免费版补 2.0.2/2.0.3；Pro 一并补上该段） |
 
-补齐 1–4 后重跑本报告，`FREE_WORDPRESS_ORG_READY` 方可置 `YES`。
+补齐 2–4 后重跑本报告，`FREE_WORDPRESS_ORG_READY` 方可置 `YES`。

@@ -106,7 +106,7 @@ Everything except the two `.htaccess` options, which are Apache-specific. The se
 
 == Screenshots ==
 
-1. Hardening and login settings.
+1. Hardening settings.
 2. Firewall rules and rate limiting.
 3. Security headers and Content Security Policy.
 4. Tools: weak-password check and the audit log.
