@@ -60,7 +60,12 @@ wp_die( $message, '', array( 'response' => 403 ) );
 | 下载 token | HMAC-SHA256，key = `wp_salt('auth')`（源码与库中都不存在），base64url 编码 |
 | 比较 | `hash_equals()` 恒定时间 |
 | 校验 | 签名 → 授权 active → 未过期 → 文件 sha256 一致 |
-| 存储 | `wp_at8_licenses.license_key` + `key_norm`（归一化，唯一索引）。**注意：当前为明文存储**，规范 §5.3 建议改为 HMAC 存储 + 后台只显示部分，该项未实施，需产品决策（见 `docs/database.md` 的待决项） |
+| **存储** | **HMAC-SHA256 + `wp_salt('auth')` 加盐**，存在 `key_norm`（唯一索引，查找只走它）；`license_key` 恒为空串；`key_hint` 存末 5 位仅供展示。**库中不存明文**（1.2.0 起） |
+| 展示 | 掩码 `AT8-SEC-•••••-•••••-•••••-9K3M2`；完整密钥仅在创建时经用户级 transient 展示一次，读取即删 |
+
+**为什么用 HMAC 而不是 `password_hash()`**：`password_hash()` 每次换盐，同一密钥两次哈希不同，
+**没法按密钥查库**。授权校验必须先定位到那一行，所以需要「确定性 + 不可逆」。
+加盐是为了防彩虹表，并让哈希不能跨站比对。细节见 `docs/license-api.md`。
 
 ## 日志与审计
 

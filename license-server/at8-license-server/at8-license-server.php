@@ -3,7 +3,7 @@
  * Plugin Name:       At8 License Server
  * Plugin URI:        https://www.at8.fun/
  * Description:       Issues and validates licence keys for the add-ons sold from this site, and serves their update packages.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Tested up to:      7.1
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'AT8LS_VERSION', '1.1.0' );
+define( 'AT8LS_VERSION', '1.2.0' );
 define( 'AT8LS_FILE', __FILE__ );
 define( 'AT8LS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AT8LS_URL', plugin_dir_url( __FILE__ ) );
@@ -74,9 +74,20 @@ register_activation_hook( __FILE__, array( 'At8\\License\\Plugin', 'activate' ) 
 register_deactivation_hook( __FILE__, array( 'At8\\License\\Plugin', 'deactivate' ) );
 
 /*
- * Load translations bundled in /languages (and any language pack installed
- * under wp-content/languages/plugins/). Hooked to init, as recommended since
- * WordPress 6.7 — loading earlier triggers a doing_it_wrong notice.
+ * Load the translations bundled in /languages.
+ *
+ * Plugin Check discourages this function. It stays: the licence server is
+ * installed on our own host and is never published on WordPress.org, so no
+ * language pack will ever exist for this text domain. The bundled translation
+ * is the only translation it will ever have.
+ *
+ * WordPress searches wp-content/languages/plugins, wp-content/languages/themes
+ * and whatever path the domain registered for itself; the plugin's own
+ * /languages directory is among them only because this call registers it.
+ * Verified against the running core on WordPress 7.1.2.
+ *
+ * Hooked to init: since WordPress 6.7, translation loading triggered before
+ * after_setup_theme raises a doing_it_wrong() notice.
  */
 add_action(
 	'init',

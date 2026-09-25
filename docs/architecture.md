@@ -51,13 +51,16 @@ GitHub（代码与 CI）、测试站 `wordpress.xmm.fan`、生产 `at8.fun`、CD
 
 ```text
 1. 签发    管理员在 At8 Licences → 创建密钥 → AT8-SEC-XXXXX-XXXXX-XXXXX-XXXXX
-                              └─► audit: license.created
+                              ├─ 库内只存 HMAC 哈希 + 末 5 位提示，不存明文
+                              ├─ 完整密钥经用户级 transient 展示一次（300 秒，读取即删）
+                              └─ audit: license.created
 
 2. 激活    客户在 Pro 设置页填入密钥
             │
             ├─► POST /wp-json/at8/v1/activate {license, site_url, domain, product, wp_version, php_version, environment}
             │      ├─ 限流：已知密钥 600/10min，未知密钥 30/10min（按 IP）
             │      ├─ Keys::verify()
+            │      │    ├─ 按 key_hash() 查库（旧数据回退按 key_norm 查）
             │      │    ├─ 密钥存在？状态 active？产品匹配？未过期？
             │      │    ├─ 该站点是否已绑定？（已绑定 → 只更新 last_seen）
             │      │    └─ 席位未满？（max_sites=0 表示不限）

@@ -209,13 +209,69 @@ function normalize_key( $key ) {
 }
 
 /**
- * Turn a stored key into the display form, e.g. AT8-SEC-XXXXX-XXXXX-…
+ * The value a licence key is looked up by.
  *
- * @param string $key Stored key.
+ * The key itself is never stored. What goes in the table is an HMAC of the
+ * normalised key, keyed with the site's auth salt, so a copy of the database —
+ * a leaked backup, an SQL injection, a hosting migration gone wrong — yields
+ * nothing that can be presented to the activate endpoint. A plain hash would
+ * do for that, but the key space is small enough to enumerate offline, so the
+ * salt matters: without it a dump plus a laptop walks the whole space.
+ *
+ * HMAC-SHA256 rather than password_hash() because the value is looked up, not
+ * verified against a candidate: the lookup has to be a deterministic index
+ * hit, and password_hash() is salted per call.
+ *
+ * Rotating wp_salt('auth') invalidates every key, which is the correct
+ * behaviour for a compromised salt and is documented in docs/security.md.
+ *
+ * @param string $key Raw key, however it was typed.
+ * @return string 64 hex characters.
+ */
+function key_hash( $key ) {
+	return hash_hmac( 'sha256', normalize_key( $key ), wp_salt( 'auth' ) );
+}
+
+/**
+ * The tail of a key, kept so an operator can tell two of them apart.
+ *
+ * Five characters, matching the last group of the printed form. Enough to
+ * recognise a key on a support call, useless to anybody trying to guess one.
+ *
+ * @param string $key Raw key.
  * @return string
  */
-function format_key( $key ) {
-	return (string) $key;
+function key_hint( $key ) {
+	$norm = normalize_key( $key );
+
+	return '' === $norm ? '' : substr( $norm, -5 );
+}
+
+/**
+ * Render a stored hint in the shape the key was printed in.
+ *
+ * The middle groups are replaced with dots, so the screen shows
+ * AT8-SEC-•••••-•••••-•••••-9K3M2 — recognisable, and not a copy of the key.
+ *
+ * @param string $product Product slug, for the code group.
+ * @param string $hint    Stored key_hint.
+ * @return string
+ */
+function masked_key( $product, $hint ) {
+	$hint = strtoupper( preg_replace( '/[^A-Za-z0-9]/', '', (string) $hint ) );
+
+	if ( '' === $hint ) {
+		return '';
+	}
+
+	return sprintf(
+		'AT8-%s-%s-%s-%s-%s',
+		product_code( $product ),
+		str_repeat( "\u{2022}", 5 ),
+		str_repeat( "\u{2022}", 5 ),
+		str_repeat( "\u{2022}", 5 ),
+		$hint
+	);
 }
 
 /**

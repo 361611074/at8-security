@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Db {
 
-	const DB_VERSION        = '2';
+	const DB_VERSION        = '3';
 	const OPTION_DB_VERSION = 'at8ls_db_version';
 
 	/**
@@ -42,10 +42,22 @@ class Db {
 		$collate  = $wpdb->get_charset_collate();
 		$suffixes = array();
 
+		/*
+		 * Column note, because two of these names no longer mean what they say.
+		 *
+		 * `key_norm` holds key_hash() — the HMAC the key is looked up by — and
+		 * carries the unique index, so a duplicate can never be issued.
+		 * `key_hint` holds the last five characters, for telling keys apart on
+		 * screen. `license_key` is retired: it held the key in the clear, and
+		 * migrate_keys() blanks it. It is kept rather than dropped because
+		 * dbDelta() does not remove columns, and a column that still exists but
+		 * is always empty is easier to reason about than one that half exists.
+		 */
 		$suffixes[] = "CREATE TABLE {$names['licenses']} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			license_key varchar(64) NOT NULL,
-			key_norm varchar(64) NOT NULL,
+			license_key varchar(64) NOT NULL DEFAULT '',
+			key_norm varchar(64) NOT NULL DEFAULT '',
+			key_hint varchar(12) NOT NULL DEFAULT '',
 			product varchar(64) NOT NULL DEFAULT '',
 			plan varchar(32) NOT NULL DEFAULT 'lifetime',
 			status varchar(20) NOT NULL DEFAULT 'active',
@@ -140,5 +152,76 @@ class Db {
 		}
 
 		self::install();
+		self::migrate_keys();
+	}
+
+	/**
+	 * Move licence keys that are still stored in the clear into the hashed form.
+	 *
+	 * Rows written before DB_VERSION 3 hold the key twice: once readable in
+	 * `license_key`, once normalised in `key_norm`. Both are the key. The
+	 * migration hashes what it finds, records the tail for display, and blanks
+	 * the readable column, so the table stops being a list of working keys.
+	 *
+	 * It reads from `license_key` rather than `key_norm` because the hash has
+	 * to be taken from the key as printed — normalising first and hashing after
+	 * is what key_hash() does internally, so either would work, but the printed
+	 * form is the one an operator could have recovered by hand.
+	 *
+	 * Rows that already have a blank `license_key` are skipped, which is what
+	 * makes this safe to run twice. A row whose key_norm already holds a hash
+	 * cannot collide: the old values were normalised keys (26 characters, the
+	 * AT8 prefix plus twenty), the new ones are 64 hex characters, and the
+	 * unique index was already satisfied by the values being replaced.
+	 *
+	 * @return int Number of rows converted.
+	 */
+	public static function migrate_keys() {
+		global $wpdb;
+
+		$names = tables();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				'SELECT id, license_key FROM %i WHERE license_key <> %s',
+				$names['licenses'],
+				''
+			),
+			ARRAY_A
+		);
+
+		if ( ! is_array( $rows ) || ! $rows ) {
+			return 0;
+		}
+
+		$done = 0;
+
+		foreach ( $rows as $row ) {
+			$plain = (string) $row['license_key'];
+
+			if ( '' === $plain ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$ok = $wpdb->update(
+				$names['licenses'],
+				array(
+					'key_norm'    => key_hash( $plain ),
+					'key_hint'    => key_hint( $plain ),
+					'license_key' => '',
+				),
+				array( 'id' => (int) $row['id'] ),
+				array( '%s', '%s', '%s' ),
+				array( '%d' )
+			);
+
+			if ( false !== $ok ) {
+				$done++;
+			}
+		}
+
+		return $done;
 	}
 }

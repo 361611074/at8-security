@@ -73,9 +73,29 @@ register_activation_hook( __FILE__, array( 'At8\\Security\\Plugin', 'activate' )
 register_deactivation_hook( __FILE__, array( 'At8\\Security\\Plugin', 'deactivate' ) );
 
 /*
- * Load translations bundled in /languages (and any language pack installed
- * under wp-content/languages/plugins/). Hooked to init, as recommended since
- * WordPress 6.7 — loading earlier triggers a doing_it_wrong notice.
+ * Load the translations bundled in /languages.
+ *
+ * Plugin Check discourages this function, and the warning is accepted here on
+ * purpose rather than suppressed. The reasoning is worth writing down, because
+ * "delete the call" is the obvious-looking fix and it is the wrong one.
+ *
+ * WordPress searches exactly three places for a text domain's MO file:
+ * wp-content/languages/plugins, wp-content/languages/themes, and whatever path
+ * the domain registered for itself. WP_Textdomain_Registry::get_paths_for_domain()
+ * adds the plugin's own /languages directory *only* because this call puts it
+ * in custom_paths. Verified against the running core on WordPress 7.1.2.
+ *
+ * So removing the call does not just silence a warning — it reverts this
+ * plugin's interface to English on every site that has no zh_CN language pack
+ * installed, which is every site on the day the plugin is published. The
+ * bundled translation exists to cover exactly that gap, and it was added
+ * because users reported the English interface.
+ *
+ * The warning is advisory; WordPress.org does not reject for it. See
+ * docs/wordpress-org-compliance-report.md for the disposition.
+ *
+ * Hooked to init: since WordPress 6.7, translation loading triggered before
+ * after_setup_theme raises a doing_it_wrong() notice.
  */
 add_action(
 	'init',

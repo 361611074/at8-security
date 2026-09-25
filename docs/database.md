@@ -7,8 +7,9 @@
 | 列 | 类型 | 说明 |
 |---|---|---|
 | `id` | bigint unsigned PK | |
-| `license_key` | varchar(64) | 展示形式 `AT8-SEC-XXXXX-XXXXX-XXXXX-XXXXX` |
-| `key_norm` | varchar(64) UNIQUE | 归一化（去符号 + 大写），查找只走它 |
+| `license_key` | varchar(64) | **恒为空串**（1.2.0 起）。历史遗留列，保留是为了迁移与回滚，不再写入 |
+| `key_norm` | varchar(64) UNIQUE | **HMAC-SHA256(归一化密钥, `wp_salt('auth')`)**，查找只走它。不再存明文或裸哈希 |
+| `key_hint` | varchar(12) | 密钥末 5 位，**仅供后台展示**，不足以反推密钥。v3 新增 |
 | `product` | varchar(64) KEY | 产品 slug |
 | `plan` | varchar(32) | `lifetime` / 未来 `yearly` 等 |
 | `status` | varchar(20) KEY | `active` / `disabled` / `suspended` / `revoked` |
@@ -17,6 +18,17 @@
 | `note` | varchar(255) | 备注（客户标识、订单号） |
 | `created_at` / `created_by` | bigint unsigned | |
 | `updated_at` | bigint unsigned | v2 新增 |
+
+**密钥存储（1.2.0 / DB v3）**：库里**不存明文**。完整密钥只在创建时经用户级 transient
+（`at8ls_new_key_<user_id>`，TTL 300 秒）展示一次，读取即删；之后后台只显示掩码
+`AT8-SEC-•••••-•••••-•••••-9K3M2`。
+
+**为什么用 HMAC 而不是 `password_hash()`**：`password_hash()` 每次换盐，同一密钥两次哈希不同，
+**没法按密钥查库**。授权校验必须先定位到那一行，所以需要「确定性 + 不可逆」。
+
+**v2 → v3 迁移**：`Db::maybe_install()` 在 `install()` 之后调用 `migrate_keys()`，
+把历史上以明文存在的行逐行哈希、写入 `key_hint`、把 `license_key` 清空。
+**幂等**（已为空的行跳过），**不 DROP、不改类型**（只加 `key_hint` 列）。详见 `docs/license-api.md`。
 
 ### `{prefix}at8_license_sites` — 站点绑定
 
@@ -79,6 +91,8 @@
 
 | 项 | 规范条款 | 影响 |
 |---|---|---|
-| 密钥改为 HMAC 存储、后台只显示部分 | §5.3 | 更安全，但**卖家将无法再把完整密钥交给买家**（当前工作流是「签发后复制给客户」）。需要确定：是否改为「签发时一次性展示 + 邮件发送」的流程 |
 | 建 `at8_customers` / `at8_orders` / `at8_subscriptions` / `at8_payments` | §5 / §10.3 | 接入支付宝/微信前必须建，且金额用最小货币单位整数（¥29.90 → 2990 + `currency=CNY`） |
 | `at8_audit_logs` 表名前缀统一为 `at8_`（现为 `wp_` + `at8_audit_logs` = `{prefix}at8_audit_logs`） | §11 | 已符合 |
+
+**已实施**（原待决项，1.2.0 完成）：密钥改为 HMAC 存储、后台只显示部分、签发时一次性展示。
+当前 `Db::DB_VERSION = 3`。

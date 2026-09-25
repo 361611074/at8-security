@@ -6,15 +6,20 @@
 |---|---|---|
 | 生产 | `at8.fun` | 真客户。**不得拿它做测试** |
 | 验收站 | `wordpress.xmm.fan` | 授权/发布/对抗测试都在这跑 |
-| 本地 | phpstudy（PHP 8.2 nts） | 主题/插件离线渲染；本产品线语法检查以服务器为准 |
+| 本地 | phpstudy（PHP 7.3.4 nts） | 跑构建脚本与测试脚本；**不能**用于本产品线的语法检查 |
 
-PHP 覆盖目标：8.2 / 8.3 / 8.4（规范 §23）。当前实测环境为 PHP 8.2。
+PHP 覆盖目标：8.2 / 8.3 / 8.4（规范 §23）。当前实测环境为 **PHP 8.3.33**。
 
-**本地没有可用的 PHP 8.2 CLI**（phpstudy 自带 7.3 会因箭头函数报错），因此语法检查在测试站执行：
+**本地没有可用的 PHP CLI**：phpstudy 自带的 7.3.4 低于插件下限 7.4，
+解析不了 `\u{2022}` 转义与箭头函数，`php -l` 会报一堆与真实问题无关的语法错误。
+因此语法检查一律在测试站执行：
 
 ```bash
 php -l /www/wwwroot/wordpress.xmm.fan/wp-content/plugins/at8-license-server/includes/class-keys.php
 ```
+
+构建脚本遇到本地 PHP 低于插件下限时，会把这一项标成 `deferred` 并说明原因，
+而不是把解析错误当成代码问题报出来。
 
 ## 测试脚本
 
@@ -22,10 +27,13 @@ php -l /www/wwwroot/wordpress.xmm.fan/wp-content/plugins/at8-license-server/incl
 
 | 脚本 | 覆盖面 |
 |---|---|
-| `at8ls-spec.py` | **规范符合性**：带数据升级 / 审计日志 / sha256 / token 期限 / 双命名空间 / 卸载策略 / 语言包（78 项） |
-| `at8ls-deploy.py` | 授权链路：签发 / 激活 / 校验 / 解绑 / 席位上限 / 过期 / 吊销 / 停用（38 项） |
-| `at8ls-publish.py` | 发布链路：上传 / 状态 / 签名下载 / token 过期 / 哈希校验 / 包缺失（63 项） |
-| `at8sec-attack.py` | 对抗：越权访问后台、缺 nonce、注入、超大 key、无 key 调用、限流（26 项） |
+| `at8ls-spec.py` | **规范符合性**：带数据升级 / 审计日志 / sha256 / token 期限 / 双命名空间 / 卸载策略 / 语言包 / 密钥存储（97 项） |
+| `at8ls-deploy.py` | 授权链路：签发 / 激活 / 校验 / 解绑 / 席位上限 / 过期 / 吊销 / 停用 / 宽限期 / 限流（38 项） |
+| `at8ls-publish.py` | 发布链路：上传 / 状态 / 签名下载 / token 过期 / 哈希校验 / 撤回 / 更新下发（73 项） |
+| `at8sec-attack.py` | 对抗：越权访问后台、缺 nonce、注入、超大 key、无 key 调用、限流、密钥存储（30 项） |
+| `at8sec-lint-zips.py` | 用目标 PHP 对 `dist/` 的发行 zip 逐文件 `php -l`（当前 55 个文件） |
+| `at8sec-plugin-check.py` | 在测试站安装发行 zip 并跑官方 Plugin Check，结果写 `dist/plugin-check-<slug>.json` |
+| `at8sec-push.py` | 单文件推送 + 服务器端 `php -l`；把仓库的 `free/` `pro/` `license-server/` 分组层映射掉 |
 | `at8sec-pro-http.py` | Pro 端到端：激活 → 更新检查 → 下载 |
 | `at8sec-login404-final-verify.py` | 自定义登录路径矩阵（大小写 / 非法字符 / 保留词） |
 | `at8sec-smoke.py` | 基础安装/激活烟测 |
@@ -36,6 +44,9 @@ php -l /www/wwwroot/wordpress.xmm.fan/wp-content/plugins/at8-license-server/incl
 由 `at8ls-spec.py` 部署并解析。它**不能**再 `require wp-load.php`——`wp eval-file` 已经引导过 WordPress，
 二次加载会重定义 wp-config 常量并把 stdout 污染成一片警告，所有断言随之失效。
 WP-CLI 传给脚本的参数在 `$args` 里，不是 `$argv`。
+
+跑任意一次性探针用 `at8ls-run.py <本地 php 文件>`，它负责上传与 `wp eval-file`。
+把探针写成文件而不是拼进 shell 一行，是因为引号在传输里会失真——这一点踩过三次。
 
 ### 带数据的升级测试
 
@@ -52,6 +63,27 @@ WP-CLI 传给脚本的参数在 `$args` 里，不是 `$argv`。
 ```bash
 python at8ls-i18n.py     # 输出应为 still untranslated: 0
 ```
+
+### 翻译是怎么加载的（别凭印象改）
+
+`at8ls-tests/i18n-probe.php` 打印每个文本域的 `.mo` 位置、加载前后状态、一条真实译文，
+以及运行内核里 `_load_textdomain_just_in_time()` 与 `WP_Textdomain_Registry` 的相关源码。
+
+**实测结论（WordPress 7.1.2）**：`get_paths_for_domain()` 只搜索
+`wp-content/languages/plugins`、`wp-content/languages/themes`，以及该域**自己注册过的**路径。
+插件自己的 `/languages` 之所以会被搜索，**只是因为 `load_plugin_textdomain()` 把它注册进了
+`custom_paths`** —— WordPress 并不会自动加载插件自带的语言目录。
+
+所以三个主文件里的 `load_plugin_textdomain()` 是**必需的**，不是遗留代码。
+Plugin Check 会对它报一条建议性 WARNING，该警告已按规范 §47 逐条判断并记录在
+`docs/wordpress-org-compliance-report.md`，**不要顺手删掉**。
+
+### 客户端退避
+
+Pro 的 `Updater::remote_info()` 在一次调用失败后会**退避一小时**
+（`FAILURE_SECONDS = 3600`）。测更新链路前必须清掉这个标志，否则会把
+「上次抖动的残留」读成「服务端没有提供版本」。`at8ls-tests/t7-toggle.php clear-cache`
+会同时清缓存与退避标志，并打印 `FAIL_FLAG`。
 
 ## 每次改动必须覆盖
 

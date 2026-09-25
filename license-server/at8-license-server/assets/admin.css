@@ -132,3 +132,21 @@
 .at8ls-wrap .at8ls-form .small-text {
 	max-width: 8em;
 }
+
+/*
+ * The key that has just been created. It is shown once and then gone, so it is
+ * set large enough to read off the screen and left selectable — an operator
+ * copying it by hand is the expected path, not an edge case.
+ */
+.at8ls-wrap .at8ls-newkey {
+	border-left-color: #00a32a;
+}
+
+.at8ls-wrap .at8ls-key-full {
+	display: inline-block;
+	padding: 6px 12px;
+	font-size: 15px;
+	letter-spacing: 0.06em;
+	white-space: normal;
+	word-break: break-all;
+}

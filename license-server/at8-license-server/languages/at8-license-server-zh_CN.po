@@ -1,7 +1,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: at8-license-server 1.1.0\n"
+"Project-Id-Version: at8-license-server 1.2.0\n"
 "PO-Revision-Date: 2026-09-21 15:30+0800\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -429,6 +429,18 @@ msgstr "production、staging 或 development。"
 msgid "%d site"
 msgid_plural "%d sites"
 msgstr[0] "%d 个站点"
+
+msgid "Copy this key now."
+msgstr "请立即复制此密钥。"
+
+msgid ""
+"This is the only time the key is shown. Only a hash of it is stored, so it "
+"cannot be looked up again — if it is lost, create a new key and revoke this "
+"one."
+msgstr "这是密钥唯一一次显示。数据库中只保存它的哈希值，之后无法再查回——如果丢失，请新建一个密钥并吊销这一个。"
+
+msgid "licence #%d"
+msgstr "授权 #%d"
 
 #~ msgid "Hostname of the site making the call."
 #~ msgstr "发起请求的站点域名。"

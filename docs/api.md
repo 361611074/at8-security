@@ -27,6 +27,11 @@ REST 接口契约。命名空间 `at8/v1`（规范地址）与 `at8-license/v1`�
 | `php` / `php_version` | 否 | PHP 版本 |
 | `environment` | 否 | `production` / `staging` / `development`，默认 production |
 
+**`license` 在服务端怎么处理**：密钥不参与 SQL 拼接。服务端先归一化（去符号 + 大写），
+再算 `hash_hmac( 'sha256', 归一化密钥, wp_salt('auth') )`，按该哈希查 `key_norm`（唯一索引）。
+**库里不存明文**，因此数据库泄露或日志泄露都不会交出可用密钥。
+旧数据（迁移前遗留）回退按 `key_norm` 存的原值查一次。细节见 `docs/license-api.md`。
+
 ## 响应
 
 统一形状：

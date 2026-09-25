@@ -22,6 +22,17 @@ class Admin {
 	const PAGE_QS  = 'page=' . self::SLUG;
 
 	/**
+	 * How long a freshly minted key stays available to be read once.
+	 *
+	 * The key is shown on the screen that follows the create form, so the
+	 * window only has to survive a redirect plus the time it takes to copy
+	 * five groups of characters. Five minutes is generous for that and short
+	 * enough that a forgotten tab is not a copy of the key sitting in the
+	 * options table for the rest of the week.
+	 */
+	const NEW_KEY_TTL = 300;
+
+	/**
 	 * Register hooks.
 	 */
 	public function __construct() {
@@ -193,6 +204,36 @@ class Admin {
 	}
 
 	/**
+	 * Show a key that was just created, once.
+	 *
+	 * This is the only place a key is ever readable. The table stores an HMAC
+	 * and a five-character tail, so if this screen is missed there is nothing
+	 * to go back to — the honest answer is a new key, and the notice says so
+	 * rather than letting an operator assume it can be looked up later.
+	 *
+	 * Called from licenses_tab(), so it renders on any visit to that screen
+	 * while a key is waiting, not only on the visit that follows the form.
+	 *
+	 * @return void
+	 */
+	private function show_new_key() {
+		$key = $this->take_new_key();
+
+		if ( '' === $key ) {
+			return;
+		}
+		?>
+		<div class="notice notice-success at8ls-newkey">
+			<p><strong><?php esc_html_e( 'Copy this key now.', 'at8-license-server' ); ?></strong></p>
+			<p><code class="at8ls-key at8ls-key-full"><?php echo esc_html( $key ); ?></code></p>
+			<p class="at8ls-desc">
+				<?php esc_html_e( 'This is the only time the key is shown. Only a hash of it is stored, so it cannot be looked up again — if it is lost, create a new key and revoke this one.', 'at8-license-server' ); ?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Warn — and offer a fix — when the tables are not there.
 	 *
 	 * The tables are created on activation, but a site restored from a partial
@@ -229,6 +270,17 @@ class Admin {
 	 * @return void
 	 */
 	private function licenses_tab() {
+		/*
+		 * The freshly minted key is shown here, driven by the stored value
+		 * rather than by a flag in the address. The redirect that follows the
+		 * create form does carry a notice code, but a key that only appears
+		 * when the address is right is a key the owner loses the moment they
+		 * reload or reopen the screen — and there is no copy of it to go back
+		 * to. Reading it is what removes it, so showing it whenever it is
+		 * still waiting is both safer and simpler.
+		 */
+		$this->show_new_key();
+
 		$rows = Keys::all();
 		?>
 		<h2><?php esc_html_e( 'Create a licence key', 'at8-license-server' ); ?></h2>
@@ -307,7 +359,9 @@ class Admin {
 					$state = (string) $row['status'];
 					?>
 					<tr>
-						<td><code class="at8ls-key"><?php echo esc_html( (string) $row['license_key'] ); ?></code></td>
+						<td>
+							<code class="at8ls-key"><?php echo esc_html( $this->key_cell( $row ) ); ?></code>
+						</td>
 						<td><?php echo esc_html( product_label( (string) $row['product'] ) ); ?></td>
 						<td>
 							<span class="at8ls-badge at8ls-<?php echo esc_attr( $state ); ?>">
@@ -415,7 +469,9 @@ class Admin {
 								<br><span class="at8ls-muted"><?php echo esc_html( (string) $row['last_ip'] ); ?></span>
 							<?php endif; ?>
 						</td>
-						<td><code class="at8ls-key"><?php echo esc_html( (string) $row['license_key'] ); ?></code></td>
+						<td>
+							<code class="at8ls-key"><?php echo esc_html( $this->key_cell( $row ) ); ?></code>
+						</td>
 						<td><?php echo esc_html( when( (int) $row['activated_at'] ) ); ?></td>
 						<td><?php echo esc_html( when( (int) $row['last_seen'] ) ); ?></td>
 						<td>
@@ -783,6 +839,35 @@ class Admin {
 	}
 
 	/**
+	 * The key column of a licence row.
+	 *
+	 * Normally the masked key. A row can reach the screen with no tail — the
+	 * tail is derived from the key, and a row whose key was already hashed
+	 * before the tail column existed has none to show — so the id stands in.
+	 * A blank cell would leave an operator with no way to say which row they
+	 * are looking at.
+	 *
+	 * @param array<string, mixed> $row Licence row.
+	 * @return string
+	 */
+	private function key_cell( $row ) {
+		$masked = masked_key(
+			isset( $row['product'] ) ? (string) $row['product'] : '',
+			isset( $row['key_hint'] ) ? (string) $row['key_hint'] : ''
+		);
+
+		if ( '' !== $masked ) {
+			return $masked;
+		}
+
+		return sprintf(
+			/* translators: %d: licence id, shown when the key cannot be masked. */
+			__( 'licence #%d', 'at8-license-server' ),
+			isset( $row['id'] ) ? (int) $row['id'] : 0
+		);
+	}
+
+	/**
 	 * Label for a licence status.
 	 *
 	 * @param string $status Stored status.
@@ -1008,12 +1093,21 @@ class Admin {
 	/**
 	 * Create a key from the form.
 	 *
+	 * The key is minted here and written to a short-lived transient tied to the
+	 * current user, then the screen redirects. Nothing else holds it: the row
+	 * has a hash and a five-character tail, so this redirect is the last point
+	 * at which it can be read.
+	 *
+	 * It goes through a transient rather than a query string because a key in a
+	 * URL is a key in the web server's access log, in the browser's history and
+	 * in any Referer header the next page sends.
+	 *
 	 * @return void
 	 */
 	private function do_issue() {
 		check_admin_referer( self::ACTION . '_issue' );
 
-		$result = Keys::issue(
+		$result = Keys::issue_with_key(
 			array(
 				'product'   => isset( $_POST['product'] ) ? sanitize_key( wp_unslash( $_POST['product'] ) ) : '',
 				'plan'      => 'lifetime',
@@ -1028,7 +1122,42 @@ class Admin {
 			$this->back( 'failed', 'licenses', $result->get_error_message() );
 		}
 
+		set_transient( $this->new_key_transient(), (string) $result['key'], self::NEW_KEY_TTL );
+
 		$this->back( 'issued' );
+	}
+
+	/**
+	 * Name of the transient holding a key that has not been read yet.
+	 *
+	 * Per user, so two administrators working at the same time do not read each
+	 * other's key — the second create would otherwise overwrite the first.
+	 *
+	 * @return string
+	 */
+	private function new_key_transient() {
+		return 'at8ls_new_key_' . get_current_user_id();
+	}
+
+	/**
+	 * Take the freshly minted key, if there is one, and forget it.
+	 *
+	 * Reading deletes: the screen shows the key exactly once, and a reload of
+	 * the page afterwards finds nothing rather than showing it again.
+	 *
+	 * @return string Empty when there is nothing waiting.
+	 */
+	private function take_new_key() {
+		$name = $this->new_key_transient();
+		$key  = get_transient( $name );
+
+		if ( ! is_string( $key ) || '' === $key ) {
+			return '';
+		}
+
+		delete_transient( $name );
+
+		return $key;
 	}
 
 	/**

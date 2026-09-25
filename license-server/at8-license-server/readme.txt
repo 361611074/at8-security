@@ -4,7 +4,7 @@ Tags: license, licensing, updates
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,10 +29,17 @@ Endpoints, under `/wp-json/at8/v1/` (and at the original
 * `POST update` — report the published version and a signed download link.
 * `GET package` — stream a package to a holder of a valid, unexpired link.
 
-Keys are stored in their own table with an index on the key, site bindings in a
-second table, and every issued key keeps a record of the sites using it so one
-can be released when a customer moves to a new domain. A third table holds the
-audit trail: who created, changed or removed a licence, and from where.
+Keys are stored in their own table, site bindings in a second table, and every
+issued key keeps a record of the sites using it so one can be released when a
+customer moves to a new domain. A third table holds the audit trail: who
+created, changed or removed a licence, and from where.
+
+A key is never stored. What the table holds is an HMAC-SHA256 of the key, keyed
+with the site's authentication salt, plus the last five characters so two keys
+can be told apart on screen. A copy of the database therefore contains no key
+that can be presented to the activate endpoint. The key is shown once, on the
+screen that follows the create form, and cannot be looked up afterwards —
+if it is lost, a new key is created and the old one revoked.
 
 Packages are published with the SHA-256 of the file as it was uploaded, and each
 download is checked against it, so a package replaced on disk is refused rather
@@ -75,6 +82,12 @@ release, and to notice a key being used somewhere it was not sold to. It is not
 sold, shared or used for anything else.
 
 == Changelog ==
+
+= 1.2.0 =
+* Licence keys are no longer stored. The table holds an HMAC-SHA256 of the key, keyed with the site's authentication salt, and the last five characters for identification. A leaked database backup no longer contains working keys.
+* A key is shown once, on the screen that follows the create form. It is held in a short-lived, per-user entry for five minutes and deleted as it is read; the licence list shows a masked form (AT8-SEC-•••••-•••••-•••••-9K3M2) from then on.
+* Licences created by an earlier version are converted on the first request after the update: the stored key is hashed, its tail kept, and the readable copy erased.
+* The Activated sites tab no longer selects the key column, because there is no longer one to select.
 
 = 1.1.0 =
 * Audit log: every licence decision is recorded with the actor, the address it came from and both ends of a status change. Keys themselves are never written to it. Entries are trimmed by a daily job, and the retention window is configurable.

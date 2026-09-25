@@ -5,6 +5,64 @@
 
 ---
 
+## 2026-09-25 · license-server 1.2.0 —— 密钥不再明文落库，并补齐上架交付物
+
+### 授权服务器 1.2.0
+
+**密钥存储改为 HMAC-SHA256（规范 §5.3 / §17）**
+
+原来 `license_key` 与 `key_norm` 两列都存明文，数据库一旦泄露或备份外流，等于把全部客户的密钥交出去。
+
+- `key_norm` 改为存 `hash_hmac( 'sha256', 归一化密钥, wp_salt('auth') )`，查找只走它；
+- `license_key` 恒为空串（列保留，便于迁移与回滚）；
+- 新增 `key_hint` 列存密钥末 5 位，**仅供后台展示**，不足以反推密钥；
+- 完整密钥改为**签发时经用户级 transient 展示一次**（300 秒，读取即删），后台列表只显示掩码
+  `AT8-SEC-•••••-•••••-•••••-9K3M2`。
+
+`Db::DB_VERSION` 2 → 3。迁移 `migrate_keys()` 在 `install()` 之后运行，把历史上以明文存在的行
+逐行哈希并清空原值：**幂等**（已清空的行跳过）、**只加列不 DROP**，并在持有真实授权的库上验过。
+
+为什么用 HMAC 而不是 `password_hash()`：后者每次换盐，同一密钥两次哈希不同，**没法按密钥查库**；
+授权校验必须先定位到那一行，所以需要「确定性 + 不可逆」。加盐是为了防彩虹表。
+
+**顺带**：移除 `load_plugin_textdomain()` 挂 `init` 时的 `_doing_it_wrong` 风险路径未动——
+该调用经实测确认**必需**（WordPress 不会自动加载插件自带的 `/languages` 目录），
+Plugin Check 的对应 WARNING 按规范 §47 逐条判断后接受，理由写进了代码注释。
+
+### 上架交付物
+
+- 新增 `THIRD-PARTY-LICENSES.md`（登记表；当前 0 个第三方依赖）。
+- 新增 `docs/free-pro-boundary.md`、`docs/free-extension-api.md`（19 个钩子逐一记录
+  Purpose / Parameters / Return / Version）、`docs/license-api.md`。
+- 新增六份审计报告：`wordpress-org-compliance-report.md`、`security-audit-report.md`、
+  `free-pro-boundary-report.md`、`third-party-license-report.md`、`external-service-report.md`、
+  `release-report.md`。
+
+### 构建
+
+- 构建脚本移到仓库根 `at8sec-build-zips.py`，**路径由脚本自身位置推导**（旧版把作者机器的
+  `E:\...` 写死）；版本从各插件头读取；构建后对每个 zip 跑规范 §65 六项审计（结构 / 禁用文件 /
+  禁用字符串 / 密钥 / 许可 / 语法），**审计失败即非零退出**。
+- 禁用字符串规则写成精确模式，避免朴素的「搜 pro」命中免费版自己合法的升级面板。
+- `AGENTS.md` 等开发文件不再进入发行包。
+
+### 测试
+
+- `at8ls-spec.py` 97/97、`at8ls-deploy.py` 38/38、`at8sec-attack.py` 30/30、
+  `at8ls-publish.py` 73/73；发行 zip 用目标 PHP 8.3.33 逐文件 lint 通过（55 文件）。
+- `at8ls-publish.py` 加固：Pro 客户端在更新检查失败后会退避一小时，单次抖动曾级联成
+  4 项失败 + 约 17 项未执行。现在测量前先清缓存，并断言
+  `the client starts from a clean cache, with no back-off flag set`（套件由 72 项增至 73 项）。
+- 新增 `at8sec-lint-zips.py`、`at8sec-plugin-check.py`、`at8sec-push.py`、`at8ls-run.py`。
+
+### 仍未完成（阻塞上架）
+
+WordPress.org 上架素材：`screenshot-1..4.png`、`icon-128x128/256x256.png`、
+`banner-772x250/1544x500.png` 尚未制作。`FREE_WORDPRESS_ORG_READY = NO`，
+其余项全部 PASS。见 `docs/release-report.md`。
+
+---
+
 ## 2026-09-21 · free 2.0.2 / pro 2.0.2 / license-server 1.0.1 —— 中文语言包
 
 用户反馈：后台界面显示英文，希望跟随 WordPress「设置 → 常规 → 站点语言」自动切换。

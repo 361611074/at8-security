@@ -13,7 +13,14 @@
 安全防御插件/
 ├── AGENTS.md                     ← 本文件
 ├── README.md  CHANGELOG.md
-├── docs/                         架构 / API / 安全 / 隐私 / 数据库 / 测试 / 发布 / wp.org
+├── THIRD-PARTY-LICENSES.md       第三方依赖登记表（当前：0 个依赖）
+├── at8sec-build-zips.py          构建 + §65 六项 zip 审计（在仓库根，路径自推导）
+├── docs/                         架构 / API / 边界 / 扩展 API / 安全 / 隐私 / 数据库 / 测试 / 发布 / wp.org
+│   ├── AT8-WordPress-商业产品通用架构规范-v2.0.md
+│   ├── architecture.md  free-pro-boundary.md  free-extension-api.md
+│   ├── license-api.md   api.md  security.md   privacy.md
+│   ├── database.md      release.md  testing.md  wordpress-org.md
+│   └── *-report.md              上架合规 / 安全审计 / 边界验证 / 第三方 / 外部服务 / 发布
 ├── free/at8-security/            免费版：上架 wp.org，GPLv2，可独立运行
 ├── pro/at8-security-pro/         商业版：依赖免费版，需 License
 ├── license-server/at8-license-server/   授权服务器：只在 at8.fun 运行
@@ -49,6 +56,13 @@
 18. **CSS 禁止 `!important`**（用户铁律）；改完 `grep -n "!important"` 自查为 0。
 19. **文案面向最终用户**：不出现开发者黑话、第三方插件名、"后续会做"这类虚词。
 20. **署名统一**：`Author: 漫步白月光`、官网 `https://www.at8.fun/`。
+21. **不得删掉主文件里的 `load_plugin_textdomain()`**。Plugin Check 会对它报一条建议性 WARNING，
+    但实测（WordPress 7.1.2）WordPress **不会**自动加载插件自带的 `/languages` 目录——
+    插件自己的语言目录之所以被搜索，只是因为该调用把它注册进了 `WP_Textdomain_Registry` 的
+    `custom_paths`。删掉它会让界面在「语言包尚未生成」的站点上退回英文。
+    判断依据已写进代码注释与 `docs/wordpress-org-compliance-report.md`。
+22. **文档与代码同步**：改了行为就改对应的 `docs/*.md`；`docs/*-report.md` 是审计记录，
+    结论变了要重跑并更新，不允许留一份过期的 PASS。
 
 ---
 
@@ -62,23 +76,36 @@
 | 下载只能走签名路由 | `uploads/at8-packages/` 文件名随机 + Web Server 禁访 + sha256 校验 |
 | 审计日志不含密钥 | 只记 license id + 事件 + 主体 + 来源 IP |
 | 卸载不毁商业记录 | license-server 默认保留表；显式开启或 `AT8LS_PURGE_ON_UNINSTALL` 才删 |
+| **库内不存密钥明文** | `key_norm` 存 HMAC-SHA256（`wp_salt('auth')` 加盐），`license_key` 恒为空串，`key_hint` 只存末 5 位；完整密钥仅签发时展示一次 |
+| **免费功能不挂 `is_pro()`** | 该过滤器只决定「是否显示 Pro 入口」，不得用来开关任何免费功能 |
 
 ---
 
 ## 4. 常用命令
 
 ```bash
-# 语法检查（服务器 PHP 8.2，本地 PHP 版本过旧不可用）
-php -l includes/class-keys.php
+# 语法检查（在测试站跑；本地 phpstudy 是 PHP 7.3.4，低于插件下限 7.4，不可用）
+php -l /www/wwwroot/wordpress.xmm.fan/wp-content/plugins/at8-license-server/includes/class-keys.php
 
-# 构建分发包（正斜杠 zip，禁用 PowerShell Compress-Archive）
-python C:\Users\漫步白月光\WorkBuddy\2026-09-13-22-03-31\at8sec-build-zips.py
+# 构建分发包（在仓库根执行；脚本自带 §65 六项审计，失败即非零退出）
+python at8sec-build-zips.py
+
+# 对发行 zip 用目标 PHP 逐文件 lint
+python at8sec-lint-zips.py
+# 在测试站对发行 zip 跑官方 Plugin Check
+python at8sec-plugin-check.py
 
 # 测试（工作区内脚本，需测试站 SSH 配置 ~/.workbuddy/wpv.json）
-python at8ls-deploy.py        # 授权链路
-python at8ls-publish.py       # 发布/下载链路
-python at8sec-attack.py       # 对抗测试
+python at8ls-deploy.py        # 38/38  授权链路（会先部署授权服务器）
+python at8ls-spec.py          # 97/97  规范符合性
+python at8ls-publish.py       # 73/73  发布/下载/更新下发
+python at8sec-attack.py       # 30/30  对抗测试
 python at8sec-pro-http.py     # Pro 端到端
+
+# 单文件推送到测试站 + 服务器端 php -l（自动映射掉 free/ pro/ license-server/ 分组层）
+python at8sec-push.py free/at8-security/at8-security.php
+# 跑一次性探针
+python at8ls-run.py at8ls-tests/i18n-probe.php
 
 # CSS 自查
 grep -rn "!important" free pro license-server --include="*.css"

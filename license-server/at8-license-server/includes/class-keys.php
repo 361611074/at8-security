@@ -83,6 +83,14 @@ class Keys {
 	/**
 	 * One licence by key, however the key was typed.
 	 *
+	 * The lookup is by hash, so the row is found without the key ever being
+	 * compared against a stored copy of itself — there is no stored copy.
+	 *
+	 * The second query covers a row that predates hashing and whose migration
+	 * has not run yet. It can only match while `license_key` still holds the
+	 * printed key, which migrate_keys() empties, so it stops matching the
+	 * moment the migration has done its work.
+	 *
 	 * @param string $key Raw key.
 	 * @return array<string, mixed>|null
 	 */
@@ -99,11 +107,26 @@ class Keys {
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$row = $wpdb->get_row(
-			$wpdb->prepare( 'SELECT * FROM %i WHERE key_norm = %s', $names['licenses'], $norm ),
+			$wpdb->prepare( 'SELECT * FROM %i WHERE key_norm = %s', $names['licenses'], key_hash( $key ) ),
 			ARRAY_A
 		);
 
-		return is_array( $row ) ? $row : null;
+		if ( is_array( $row ) ) {
+			return $row;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$legacy = $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM %i WHERE key_norm = %s AND license_key <> %s',
+				$names['licenses'],
+				$norm,
+				''
+			),
+			ARRAY_A
+		);
+
+		return is_array( $legacy ) ? $legacy : null;
 	}
 
 	/**
@@ -113,6 +136,22 @@ class Keys {
 	 * @return int|\WP_Error New licence id, or an error.
 	 */
 	public static function issue( $args ) {
+		$result = self::issue_with_key( $args );
+
+		return is_wp_error( $result ) ? $result : (int) $result['id'];
+	}
+
+	/**
+	 * Issue a new licence and hand back the key that was minted.
+	 *
+	 * The key exists in the return value and nowhere else: the row stores a
+	 * hash and the last five characters, so this is the only moment it can be
+	 * shown. Callers that display it must do so once — see Admin::do_issue().
+	 *
+	 * @param array<string, mixed> $args product, plan, days, max_sites, note.
+	 * @return array{id:int, key:string}|\WP_Error New licence id and its key.
+	 */
+	public static function issue_with_key( $args ) {
 		global $wpdb;
 
 		$product = isset( $args['product'] ) ? sanitize_key( (string) $args['product'] ) : '';
@@ -131,11 +170,11 @@ class Keys {
 		// reject it as a database error rather than a retry, so loop instead.
 		for ( $attempt = 0; $attempt < 5; $attempt++ ) {
 			$key  = generate_key( $product );
-			$norm = normalize_key( $key );
+			$hash = key_hash( $key );
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$exists = $wpdb->get_var(
-				$wpdb->prepare( 'SELECT id FROM %i WHERE key_norm = %s', $names['licenses'], $norm )
+				$wpdb->prepare( 'SELECT id FROM %i WHERE key_norm = %s', $names['licenses'], $hash )
 			);
 
 			if ( $exists ) {
@@ -143,8 +182,10 @@ class Keys {
 			}
 
 			$data = array(
-				'license_key' => $key,
-				'key_norm'    => $norm,
+				// Retired column: the key is never written to the table.
+				'license_key' => '',
+				'key_norm'    => $hash,
+				'key_hint'    => key_hint( $key ),
 				'product'     => $product,
 				'plan'        => isset( $args['plan'] ) && '' !== $args['plan'] ? sanitize_key( (string) $args['plan'] ) : 'lifetime',
 				'status'      => self::STATUS_ACTIVE,
@@ -160,7 +201,7 @@ class Keys {
 			$ok = $wpdb->insert(
 				$names['licenses'],
 				$data,
-				array( '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%d' )
+				array( '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%d', '%d', '%d' )
 			);
 
 			if ( $ok ) {
@@ -179,7 +220,10 @@ class Keys {
 					)
 				);
 
-				return $id;
+				return array(
+					'id'  => $id,
+					'key' => $key,
+				);
 			}
 		}
 
@@ -391,6 +435,8 @@ class Keys {
 	/**
 	 * Every binding, with the key it belongs to.
 	 *
+	 * The hint, not the key: the table has no copy of the key to select.
+	 *
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function all_sites() {
@@ -401,7 +447,7 @@ class Keys {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT s.*, l.license_key, l.product, l.status AS license_status
+				'SELECT s.*, l.key_hint, l.product, l.status AS license_status
 				FROM %i s
 				LEFT JOIN %i l ON l.id = s.license_id
 				ORDER BY s.last_seen DESC, s.id DESC',

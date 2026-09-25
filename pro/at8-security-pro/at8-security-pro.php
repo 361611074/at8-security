@@ -82,9 +82,22 @@ register_activation_hook( __FILE__, array( 'At8\\Security\\Pro\\Plugin', 'activa
 register_deactivation_hook( __FILE__, array( 'At8\\Security\\Pro\\Plugin', 'deactivate' ) );
 
 /*
- * Load translations bundled in /languages (and any language pack installed
- * under wp-content/languages/plugins/). Hooked to init, as recommended since
- * WordPress 6.7 — loading earlier triggers a doing_it_wrong notice.
+ * Load the translations bundled in /languages.
+ *
+ * Plugin Check discourages this function. It stays, for a reason that is
+ * stronger here than in the free plugin: Pro is distributed from our own site
+ * and never from WordPress.org, so no language pack will ever be built or
+ * installed for this text domain. The bundled translation is not a convenience
+ * that something else would replace — it is the only translation this plugin
+ * will ever have.
+ *
+ * WordPress searches wp-content/languages/plugins, wp-content/languages/themes
+ * and whatever path the domain registered for itself; the plugin's own
+ * /languages directory is among them only because this call registers it.
+ * Verified against the running core on WordPress 7.1.2.
+ *
+ * Hooked to init: since WordPress 6.7, translation loading triggered before
+ * after_setup_theme raises a doing_it_wrong() notice.
  */
 add_action(
 	'init',
