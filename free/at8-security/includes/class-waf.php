@@ -103,8 +103,16 @@ class WAF {
 		 * REST and AJAX requests carry their own validation, and reading the
 		 * request body there is unsafe (php://input can only be consumed
 		 * once). Both are skipped, as before.
+		 *
+		 * REST_REQUEST is defined only when the REST dispatcher runs — long
+		 * after this init hook — so it can never be true here (caught in
+		 * live testing: empty-UA server-to-server callbacks such as payment
+		 * notifies were being denied). Judge by the URI instead: anything
+		 * under /wp-json/ is a REST request by definition.
 		 */
-		if ( ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || wp_doing_ajax() ) {
+		if ( strpos( isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '', '/wp-json/' ) !== false
+			|| ( defined( 'REST_REQUEST' ) && REST_REQUEST )
+			|| wp_doing_ajax() ) {
 			return;
 		}
 
