@@ -89,7 +89,7 @@ if (!class_exists('AT8SDK_Updater')) {
 
             $plugin_data = get_file_data($config->plugin_file, ['Version' => 'Version']);
             $current = isset($plugin_data['Version']) ? $plugin_data['Version'] : '0.0.0';
-            if (version_compare($current, $data['version'], '>=')) {
+            if (empty($data['version']) || version_compare($current, (string) $data['version'], '>=')) {
                 return $transient;
             }
 
