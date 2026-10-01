@@ -1,18 +1,15 @@
 <?php
 /**
- * Licence storage and validation.
+ * Licence manager — AT8 License SDK 接入层（v2.1.0）
  *
- * The rules this file implements — deliberately, because they decide whether a
- * site stays protected:
+ * 授权逻辑全部由统一授权中心（at8-license-server）负责；本文件保留
+ * At8\Security\Pro\License 的公开 API（get / activate / refresh / release /
+ * is_valid / status_label / sync_schedule …），class-admin、class-updater、
+ * class-plugin 无需改动。
  *
- * 1. A key is only "valid" after the server has confirmed it at least once.
- * 2. Once confirmed, a later failed *check* does not switch protection off
- *    straight away. Losing the anti-bot challenge because the licence server
- *    had a bad afternoon would be worse than the licence problem.
- * 3. A key the server explicitly rejects gets a short grace period, then off.
- * 4. `AT8SEC_PRO_DEV_MODE` in wp-config.php bypasses all of it for staging and
- *    offline work. Anyone who can edit wp-config.php already owns the site, so
- *    this adds no attack surface.
+ * 状态映射（SDK → 本插件历史语义）：
+ *   active → active；grace → unreachable（宽限）；expired → expired；
+ *   revoked / suspended / invalid → rejected；server_error → unreachable。
  *
  * @package At8\Security\Pro
  */
@@ -24,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Licence manager.
+ * Licence manager (SDK adapter).
  */
 class License {
 
@@ -36,13 +33,61 @@ class License {
 	const STATUS_REJECTED    = 'rejected';
 	const STATUS_UNREACHABLE = 'unreachable';
 
+	/** @var bool */
+	private static $sdk_ready = false;
+
 	/**
 	 * Register hooks.
 	 */
 	public function __construct() {
-		// Priority 21: the free plugin schedules its own job at 20.
-		add_action( 'init', array( __CLASS__, 'sync_schedule' ), 21 );
 		add_action( self::CRON_HOOK, array( __CLASS__, 'refresh' ) );
+	}
+
+	/** 初始化 SDK（幂等） */
+	private static function ensure_sdk() {
+		if ( self::$sdk_ready ) {
+			return AT8_License_SDK::license();
+		}
+		self::$sdk_ready = true;
+
+		if ( ! class_exists( 'AT8_License_SDK' ) ) {
+			require_once AT8SEC_PRO_DIR . 'sdk/at8-license-sdk.php';
+		}
+
+		AT8_License_SDK::init( array(
+			'server_url'  => 'https://www.at8.fun',
+			'product'     => 'at8-security-pro',
+			'plugin_file' => AT8SEC_PRO_FILE,
+			'buy_url'     => 'https://www.at8.fun/store/',
+			// 更新仍由本插件自带 Updater 负责（已改走 SDK 签名调用 + sha256 校验）
+			'update'      => false,
+		) );
+
+		// 兼容旧的 cron 钩子名：转发到 SDK 的每日复查
+		add_action( 'init', array( __CLASS__, 'sync_schedule' ), 21 );
+
+		return AT8_License_SDK::license();
+	}
+
+	/** SDK 状态 → 本插件历史状态 */
+	private static function map_status( $sdk_state ) {
+		if ( empty( $sdk_state['key'] ) ) {
+			return self::STATUS_INACTIVE;
+		}
+		switch ( isset( $sdk_state['status'] ) ? $sdk_state['status'] : '' ) {
+			case 'active':
+				return self::STATUS_ACTIVE;
+			case 'grace':
+				return self::STATUS_UNREACHABLE;
+			case 'expired':
+				return self::STATUS_EXPIRED;
+			case 'revoked':
+			case 'suspended':
+			case 'invalid':
+				return self::STATUS_REJECTED;
+			default:
+				return self::STATUS_UNREACHABLE;
+		}
 	}
 
 	/**
@@ -51,52 +96,18 @@ class License {
 	 * @return array{key:string, status:string, plan:string, expires:int, last_ok:int, checked_at:int, message:string}
 	 */
 	public static function get() {
-		$stored = get_option( AT8SEC_PRO_LICENSE_OPTION, array() );
+		$sdk   = self::ensure_sdk();
+		$state = $sdk ? $sdk->state() : array();
 
-		if ( ! is_array( $stored ) ) {
-			$stored = array();
-		}
-
-		$record = wp_parse_args(
-			$stored,
-			array(
-				'key'        => '',
-				'status'     => self::STATUS_INACTIVE,
-				'plan'       => '',
-				'expires'    => 0,
-				'last_ok'    => 0,
-				'checked_at' => 0,
-				'message'    => '',
-			)
+		return array(
+			'key'        => isset( $state['key'] ) ? (string) $state['key'] : '',
+			'status'     => self::map_status( $state ),
+			'plan'       => isset( $state['license_type'] ) ? (string) $state['license_type'] : '',
+			'expires'    => isset( $state['expires_at'] ) ? (int) $state['expires_at'] : 0,
+			'last_ok'    => isset( $state['last_ok'] ) ? (int) $state['last_ok'] : 0,
+			'checked_at' => isset( $state['last_ok'] ) ? (int) $state['last_ok'] : 0,
+			'message'    => isset( $state['message'] ) ? (string) $state['message'] : '',
 		);
-
-		$record['key']        = (string) $record['key'];
-		$record['status']     = (string) $record['status'];
-		$record['plan']       = (string) $record['plan'];
-		$record['expires']    = (int) $record['expires'];
-		$record['last_ok']    = (int) $record['last_ok'];
-		$record['checked_at'] = (int) $record['checked_at'];
-		$record['message']    = (string) $record['message'];
-
-		if ( '' === $record['key'] ) {
-			$record['status'] = self::STATUS_INACTIVE;
-		}
-
-		return $record;
-	}
-
-	/**
-	 * Save a record, merging over whatever is stored.
-	 *
-	 * @param array<string, mixed> $values Values to merge.
-	 * @return void
-	 */
-	private static function store( $values ) {
-		$record = wp_parse_args( $values, self::get() );
-
-		// The stored record is compared against its own previous value on each
-		// request, so it must not be autoloaded with every option read.
-		update_option( AT8SEC_PRO_LICENSE_OPTION, $record, false );
 	}
 
 	/**
@@ -118,23 +129,8 @@ class License {
 			return true;
 		}
 
-		$record = self::get();
-
-		if ( '' === $record['key'] ) {
-			return false;
-		}
-
-		if ( self::STATUS_ACTIVE === $record['status'] ) {
-			return true;
-		}
-
-		if ( self::STATUS_REJECTED === $record['status'] || self::STATUS_EXPIRED === $record['status'] ) {
-			return self::grace_remaining( AT8SEC_PRO_GRACE_DAYS_REJECTED ) > 0;
-		}
-
-		// Anything else — unreachable, never confirmed — is decided by how long
-		// ago the server last said yes.
-		return self::grace_remaining( AT8SEC_PRO_GRACE_DAYS ) > 0;
+		$sdk = self::ensure_sdk();
+		return $sdk ? $sdk->is_valid() : false;
 	}
 
 	/**
@@ -150,7 +146,7 @@ class License {
 			return 0;
 		}
 
-		return max( 0, ( (int) $last_ok + ( (int) $days * DAY_IN_SECONDS ) ) - time() );
+		return max( 0, ( ( (int) $last_ok + ( (int) $days * DAY_IN_SECONDS ) ) - time() ) );
 	}
 
 	/**
@@ -159,9 +155,8 @@ class License {
 	 * @return bool
 	 */
 	public static function is_lifetime() {
-		$record = self::get();
-
-		return self::STATUS_ACTIVE === $record['status'] && 0 === $record['expires'];
+		$sdk = self::ensure_sdk();
+		return $sdk ? $sdk->is_lifetime() : false;
 	}
 
 	/**
@@ -177,32 +172,17 @@ class License {
 			return new \WP_Error( 'at8sec_pro_empty_key', __( 'Enter a licence key first.', 'at8-security-pro' ) );
 		}
 
-		$response = Api::activate( $key );
-
-		if ( is_wp_error( $response ) ) {
-			$previous = self::get();
-
-			/*
-			 * Remember the attempt so the screen can say what went wrong. An
-			 * unconfirmed key is not a licence, so last_ok is cleared — but only
-			 * for a key that was not already confirmed. Re-checking the same key
-			 * while the server is having a bad afternoon must not throw away a
-			 * licence the server itself granted earlier.
-			 */
-			self::store(
-				array(
-					'key'        => $key,
-					'status'     => self::STATUS_UNREACHABLE,
-					'checked_at' => time(),
-					'message'    => $response->get_error_message(),
-					'last_ok'    => $key === $previous['key'] ? $previous['last_ok'] : 0,
-				)
-			);
-
-			return $response;
+		$sdk = self::ensure_sdk();
+		if ( ! $sdk ) {
+			return new \WP_Error( 'at8sec_pro_sdk', 'SDK 未初始化' );
 		}
 
-		return self::apply( $key, $response );
+		$result = $sdk->activate( $key );
+		if ( true !== $result ) {
+			return new \WP_Error( 'at8sec_pro_activate', (string) $result );
+		}
+
+		return true;
 	}
 
 	/**
@@ -211,27 +191,23 @@ class License {
 	 * @return true|\WP_Error
 	 */
 	public static function refresh() {
-		$record = self::get();
+		$sdk = self::ensure_sdk();
 
-		if ( '' === $record['key'] ) {
+		if ( ! $sdk || '' === $sdk->get_key() ) {
 			return new \WP_Error( 'at8sec_pro_no_key', __( 'No licence key is stored.', 'at8-security-pro' ) );
 		}
 
-		$response = Api::validate( $record['key'] );
+		$sdk->verify();
+		$state = $sdk->state();
 
-		if ( is_wp_error( $response ) ) {
-			self::store(
-				array(
-					'status'     => self::STATUS_UNREACHABLE,
-					'checked_at' => time(),
-					'message'    => $response->get_error_message(),
-				)
-			);
-
-			return $response;
+		if ( isset( $state['status'] ) && in_array( $state['status'], array( 'active', 'grace' ), true ) ) {
+			return true;
 		}
 
-		return self::apply( $record['key'], $response );
+		return new \WP_Error(
+			'at8sec_pro_refresh',
+			isset( $state['message'] ) && '' !== $state['message'] ? $state['message'] : '验证未通过'
+		);
 	}
 
 	/**
@@ -240,26 +216,15 @@ class License {
 	 * @return true|\WP_Error
 	 */
 	public static function release() {
-		$record = self::get();
+		$sdk = self::ensure_sdk();
 
-		if ( '' === $record['key'] ) {
+		if ( ! $sdk || '' === $sdk->get_key() ) {
 			return new \WP_Error( 'at8sec_pro_no_key', __( 'No licence key is stored.', 'at8-security-pro' ) );
 		}
 
-		$response = Api::deactivate( $record['key'] );
-
-		// Even if the server cannot be reached, this site stops using the key.
-		self::store(
-			array(
-				'status'     => self::STATUS_INACTIVE,
-				'last_ok'    => 0,
-				'checked_at' => time(),
-				'message'    => is_wp_error( $response ) ? $response->get_error_message() : '',
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
+		$result = $sdk->deactivate();
+		if ( true !== $result ) {
+			return new \WP_Error( 'at8sec_pro_release', (string) $result );
 		}
 
 		return true;
@@ -271,134 +236,41 @@ class License {
 	 * @return void
 	 */
 	public static function forget() {
-		delete_option( AT8SEC_PRO_LICENSE_OPTION );
+		delete_option( 'at8lic_sdk_at8-security-pro_state' );
 	}
 
 	/**
-	 * Translate a server answer into stored state.
-	 *
-	 * @param string               $key      Key the answer belongs to.
-	 * @param array<string, mixed> $response Decoded response.
-	 * @return true|\WP_Error
-	 */
-	private static function apply( $key, $response ) {
-		$valid   = ! empty( $response['valid'] );
-		$expires = isset( $response['expires'] ) ? (int) $response['expires'] : 0;
-		$message = isset( $response['message'] ) ? sanitize_text_field( (string) $response['message'] ) : '';
-		$plan    = isset( $response['plan'] ) ? sanitize_text_field( (string) $response['plan'] ) : '';
-
-		if ( $valid && $expires > 0 && $expires < time() ) {
-			// The server said yes but the expiry has already passed; treat the
-			// date as authoritative rather than trusting the flag alone.
-			$valid = false;
-		}
-
-		if ( $valid ) {
-			self::store(
-				array(
-					'key'        => $key,
-					'status'     => self::STATUS_ACTIVE,
-					'plan'       => $plan,
-					'expires'    => $expires,
-					'last_ok'    => time(),
-					'checked_at' => time(),
-					'message'    => $message,
-				)
-			);
-
-			return true;
-		}
-
-		$status = isset( $response['status'] ) ? sanitize_key( (string) $response['status'] ) : '';
-
-		if ( ! in_array( $status, array( self::STATUS_EXPIRED, self::STATUS_REJECTED, self::STATUS_INACTIVE ), true ) ) {
-			$status = $expires > 0 ? self::STATUS_EXPIRED : self::STATUS_REJECTED;
-		}
-
-		self::store(
-			array(
-				'key'        => $key,
-				'status'     => $status,
-				'plan'       => $plan,
-				'expires'    => $expires,
-				'checked_at' => time(),
-				'message'    => $message,
-			)
-		);
-
-		return new \WP_Error(
-			'at8sec_pro_' . $status,
-			'' !== $message
-				? $message
-				: __( 'The licence server did not accept this key for this site.', 'at8-security-pro' )
-		);
-	}
-
-	/**
-	 * Human-readable status.
+	 * Human readable status for the settings screen.
 	 *
 	 * @return string
 	 */
 	public static function status_label() {
-		if ( dev_mode() ) {
-			return __( 'Development mode — no licence is checked on this install.', 'at8-security-pro' );
-		}
-
-		switch ( self::get()['status'] ) {
-			case self::STATUS_ACTIVE:
-				return self::is_lifetime()
-					? __( 'Active — lifetime licence.', 'at8-security-pro' )
-					: __( 'Active.', 'at8-security-pro' );
-
-			case self::STATUS_EXPIRED:
-				return __( 'Expired.', 'at8-security-pro' );
-
-			case self::STATUS_REJECTED:
-				return __( 'Not valid for this site.', 'at8-security-pro' );
-
-			case self::STATUS_UNREACHABLE:
-				return __( 'Could not reach the licence server on the last check.', 'at8-security-pro' );
-
-			case self::STATUS_INACTIVE:
-			default:
-				return __( 'No licence key stored.', 'at8-security-pro' );
-		}
+		$sdk = self::ensure_sdk();
+		return $sdk ? $sdk->status_label() : __( '未激活', 'at8-security-pro' );
 	}
 
 	/**
-	 * Schedule — or drop — the twice-daily check.
+	 * Schedule the daily re-check (SDK 已内置调度，这里保留旧钩子兼容).
 	 *
 	 * @return void
 	 */
 	public static function sync_schedule() {
-		$scheduled = wp_next_scheduled( self::CRON_HOOK );
-		$has_key   = '' !== self::get()['key'] && ! dev_mode();
-
-		if ( $has_key ) {
-			if ( ! $scheduled ) {
-				wp_schedule_event( time() + HOUR_IN_SECONDS, 'twicedaily', self::CRON_HOOK );
-			}
-
-			return;
-		}
-
-		while ( $scheduled ) {
-			wp_unschedule_event( $scheduled, self::CRON_HOOK );
-			$scheduled = wp_next_scheduled( self::CRON_HOOK );
+		$sdk = self::ensure_sdk();
+		if ( $sdk && '' !== $sdk->get_key() && ! wp_next_scheduled( self::CRON_HOOK ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'twicedaily', self::CRON_HOOK );
 		}
 	}
 
 	/**
-	 * Remove the scheduled check.
+	 * Drop the scheduled job.
 	 *
 	 * @return void
 	 */
 	public static function unschedule() {
-		$scheduled = wp_next_scheduled( self::CRON_HOOK );
-
-		while ( $scheduled ) {
-			wp_unschedule_event( $scheduled, self::CRON_HOOK );
-			$scheduled = wp_next_scheduled( self::CRON_HOOK );
+		$ts = wp_next_scheduled( self::CRON_HOOK );
+		while ( $ts ) {
+			wp_unschedule_event( $ts, self::CRON_HOOK );
+			$ts = wp_next_scheduled( self::CRON_HOOK );
 		}
 	}
 }
