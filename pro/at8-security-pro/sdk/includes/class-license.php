@@ -51,7 +51,8 @@ class AT8SDK_License
     private static function state_sig(array $state)
     {
         unset($state['sig']);
-        // 独立 salt 上下文，不与授权码哈希共用
+        // 独立 salt 上下文，不与授权码哈希共用；ksort 固化键序，防未来改动引发全量失效
+        ksort($state);
         return hash_hmac('sha256', wp_json_encode($state), wp_salt('auth') . '|at8sdk-state');
     }
 
