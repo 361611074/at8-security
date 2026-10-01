@@ -197,9 +197,30 @@ class Updater {
 			return array();
 		}
 
-		$response = Api::update( License::get()['key'] );
+		// v2.1.0：经 SDK 签名调用 /update/check（旧的无签名 Api::update 已废弃）。
+		$sdk      = AT8_License_SDK::license();
+		$response = null;
 
-		if ( is_wp_error( $response ) ) {
+		if ( $sdk ) {
+			$res = $sdk->client()->post(
+				'/update/check',
+				array(
+					'product'  => 'at8-security-pro',
+					'version'  => AT8SEC_PRO_VERSION,
+					'site_url' => home_url(),
+				),
+				$sdk->get_key()
+			);
+
+			if (
+				$res['http'] !== null && $res['http'] < 300
+				&& ! empty( $res['data']['success'] ) && ! empty( $res['data']['update_available'] )
+			) {
+				$response = $res['data'];
+			}
+		}
+
+		if ( null === $response ) {
 			/*
 			 * Back off for an hour. The updates screen is loaded often, and a
 			 * server that is down would otherwise be asked on every one of
@@ -211,14 +232,15 @@ class Updater {
 		}
 
 		$info = array(
+			// 服务器签名 URL 仅 900 秒有效；package 指向 SDK 本地下载代理（下载时取新鲜 URL）。
 			'version'      => isset( $response['version'] ) ? (string) $response['version'] : '',
-			'download_url' => isset( $response['download_url'] ) ? esc_url_raw( (string) $response['download_url'] ) : '',
-			'homepage'     => isset( $response['homepage'] ) ? esc_url_raw( (string) $response['homepage'] ) : 'https://www.at8.fun/',
-			'requires'     => isset( $response['requires'] ) ? (string) $response['requires'] : '6.4',
-			'tested'       => isset( $response['tested'] ) ? (string) $response['tested'] : '7.1',
-			'requires_php' => isset( $response['requires_php'] ) ? (string) $response['requires_php'] : AT8SEC_PRO_MIN_PHP,
+			'download_url' => admin_url( 'admin-ajax.php?action=at8sdk_download&product=at8-security-pro' ),
+			'homepage'     => 'https://www.at8.fun/',
+			'requires'     => '6.4',
+			'tested'       => '6.7',
+			'requires_php' => AT8SEC_PRO_MIN_PHP,
 			'changelog'    => isset( $response['changelog'] ) ? (string) $response['changelog'] : '',
-			'last_updated' => isset( $response['last_updated'] ) ? (string) $response['last_updated'] : '',
+			'last_updated' => gmdate( 'Y-m-d H:i:s', isset( $response['expires'] ) ? (int) $response['expires'] : time() ),
 		);
 
 		// Without both a version and somewhere to download it from there is
