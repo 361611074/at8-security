@@ -28,6 +28,11 @@ class AT8SDK_Domain
             return '';
         }
 
+        // IPv6 字面量：parse_url 保留方括号（[::1]），剥掉后再归一化
+        if ($host[0] === '[' && substr($host, -1) === ']') {
+            $host = substr($host, 1, -1);
+        }
+
         if (function_exists('idn_to_ascii')) {
             $host = idn_to_ascii($host, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
             if ($host === false || $host === null) {
