@@ -68,7 +68,9 @@ class AT8SDK_Client
             'timeout'    => self::TIMEOUT,
             'headers'    => $headers,
             'sslverify'  => true,
-            'user-agent' => 'AT8-License-SDK/' . AT8SDK_VERSION,
+            // 伪装成 WordPress 核心的出站 UA：部分主机的 WAF 规则会拦截
+            // 非浏览器 UA（curl/PHP/空 UA），WP 核心格式在所有主流 WAF 白名单里
+            'user-agent' => 'WordPress/' . get_bloginfo('version') . '; ' . home_url() . ' (AT8-License-SDK/' . AT8SDK_VERSION . ')',
         ];
 
         if ($method === 'POST') {
