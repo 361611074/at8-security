@@ -92,13 +92,19 @@ if (!class_exists('AT8SDK_AdminPage')) {
             exit;
         }
 
-        /** 兼容入口：渲染最近注册产品的授权页（嵌入模式） */
-        public static function render_page()
+        /**
+         * 兼容入口：渲染指定产品的授权页（嵌入模式）。
+         * 多产品同站时必须传 $product；单产品站点可不传。
+         */
+        public static function render_page($product = '')
         {
-            if (!self::$configs) {
+            if ($product !== '' && isset(self::$configs[$product])) {
+                self::render(self::$configs[$product]);
                 return;
             }
-            self::render(end(self::$configs));
+            if (self::$configs) {
+                self::render(end(self::$configs));
+            }
         }
 
         /** 渲染指定产品的授权页 */
@@ -106,7 +112,12 @@ if (!class_exists('AT8SDK_AdminPage')) {
         {
             $license = AT8_License_SDK::license($config->product);
 
-            $state  = $license ? $license->state() : [];
+            if (!$license) {
+                echo '<div class="wrap"><h1>授权管理</h1><p>SDK 未初始化。</p></div>';
+                return;
+            }
+
+            $state  = $license->state();
             $active = $license ? $license->is_valid() : false;
             $key    = $license ? $license->get_key() : '';
             $grace  = isset($state['status']) && $state['status'] === 'grace';
