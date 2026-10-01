@@ -239,13 +239,13 @@ class AT8SDK_License
 
         $state = $this->state();
 
-        if ($res['http'] === null) {
-            // 网络故障：从上次成功时间起算宽限期（规划书 §22）
+        if ($res['http'] === null || $res['http'] >= 500) {
+            // 网络故障 / 服务器 5xx / 限流：从上次成功时间起算宽限期（规划书 §22/§69）
             $last_ok = isset($state['last_ok']) ? (int) $state['last_ok'] : time();
             $grace_days = isset($state['grace_days']) ? max(1, (int) $state['grace_days']) : 7;
             $state['status'] = 'grace';
             $state['grace_until'] = $last_ok + $grace_days * DAY_IN_SECONDS;
-            $state['message'] = '授权服务器暂时无法连接，已进入宽限期';
+            $state['message'] = '授权服务器暂时无法访问，已进入宽限期';
             $this->save_state($state);
             return;
         }
@@ -268,6 +268,17 @@ class AT8SDK_License
         }
 
         $code = isset($res['data']['code']) ? $res['data']['code'] : 'SERVER_ERROR';
+        if ($code === 'RATE_LIMITED') {
+            // 限流不是客户的问题：进宽限而不是停 Pro
+            $last_ok = isset($state['last_ok']) ? (int) $state['last_ok'] : time();
+            $grace_days = isset($state['grace_days']) ? max(1, (int) $state['grace_days']) : 7;
+            $state['status'] = 'grace';
+            $state['grace_until'] = $last_ok + $grace_days * DAY_IN_SECONDS;
+            $state['message'] = '验证频率受限，已进入宽限期';
+            $this->save_state($state);
+            return;
+        }
+
         $state['status']  = $this->map_error_status($code);
         $state['message'] = isset($res['data']['message']) ? $res['data']['message'] : '验证失败';
         $this->save_state($state);
