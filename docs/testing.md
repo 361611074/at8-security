@@ -64,6 +64,32 @@ WP-CLI 传给脚本的参数在 `$args` 里，不是 `$argv`。
 python at8ls-i18n.py     # 输出应为 still untranslated: 0
 ```
 
+### 测试站的三个前置条件（都踩过，别再踩）
+
+跑套件前先确认这三条，否则会出现「插件坏了」的假象：
+
+1. **站点不得输出 BOM。** 2026-10-04 测试站每个 PHP 响应（含 `/wp-json/`）都以
+   `EF BB BF` 开头，来源是**另一个插件**的 `at8-online-contact.php` 文件头带 BOM。
+   后果有两层：Python 的 `json.loads()` 抛 `Unexpected UTF-8 BOM`，`says()` 退回比对
+   原始 `\uXXXX` 文本 → 6 条断言假失败；更严重的是 SDK 客户端的 `json_decode()`
+   拿到 `null`，**Pro 在任何站点都激活不了**。
+   静态文件（`admin.css`、`readme.html`）不带 BOM，可用来快速区分 PHP 层还是 nginx 层。
+   排查一行：
+
+   ```bash
+   find . -type f -name '*.php' | while read f; do
+     [ "$(head -c3 "$f" | od -An -tx1 | tr -d ' \n')" = efbbbf ] && echo "BOM: $f"
+   done
+   ```
+
+2. **`~/.workbuddy/wpv.json` 的 `admin_pass` 必须是当前后台密码。** 密码一改，
+   `at8ls-publish.py` 第一条「signed in to the admin」即挂，其后 30+ 条全部级联失败——
+   看起来像后台全坏，实际只是密码过期。
+
+3. **跑前清空 `debug.log`。** 测试站上其他插件会刷自己的告警（本轮是 `at8-smtp-pro`
+   在 PHP 8.3 下的 `version_compare(): Passing null` 弃用警告），把 `at8sec-attack.py` 的
+   「nothing warned, noticed or died」判成失败。
+
 ### 翻译是怎么加载的（别凭印象改）
 
 `at8ls-tests/i18n-probe.php` 打印每个文本域的 `.mo` 位置、加载前后状态、一条真实译文，

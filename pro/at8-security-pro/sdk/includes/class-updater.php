@@ -5,6 +5,11 @@
  *
  * 流程：transient 里 package 指向本站 admin-ajax 代理 → 下载时代理向服务器
  * 重新请求 update/check 拿新鲜签名 URL → 流式转发安装包。
+ *
+ * 注意：at8-security-pro 调用 SDK 时传的是 `'update' => false`（更新由本插件
+ * 自带的 includes/class-updater.php 负责，已改走 SDK 签名调用 + sha256 校验），
+ * 因此 AT8SDK_Updater::init() 不会被调用，本文件在本产品里是**未激活**的。
+ * 它仍然随 SDK 一起分发，所以下面的扫描器提示按未激活代码处理。
  */
 
 if (!defined('ABSPATH')) {
@@ -111,6 +116,7 @@ if (!class_exists('AT8SDK_Updater')) {
                 wp_die('无权限');
             }
 
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- inactive in this product (update => false), and gated on update_plugins.
             $product = isset($_GET['product']) ? sanitize_key(wp_unslash($_GET['product'])) : '';
             $config  = $product !== '' && isset(self::$configs[$product]) ? self::$configs[$product] : null;
 
@@ -131,6 +137,7 @@ if (!class_exists('AT8SDK_Updater')) {
 
             header('Content-Type: application/zip');
             header('Content-Disposition: attachment; filename="' . sanitize_file_name($config->product . '-' . $data['version'] . '.zip') . '"');
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- raw ZIP bytes streamed to the browser; escaping would corrupt the archive.
             echo wp_remote_retrieve_body($res);
             exit;
         }

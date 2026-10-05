@@ -45,8 +45,15 @@ class License {
 
 	/** 初始化 SDK（幂等） */
 	private static function ensure_sdk() {
+		/*
+		 * AT8_License_SDK 及 AT8SDK_* 是**全局**类（sdk/ 下的文件不声明 namespace），
+		 * 而本文件在 namespace At8\Security\Pro 里。类名在命名空间内**不会**回退到全局，
+		 * 所以不加前导反斜杠时 `AT8_License_SDK::init()` 会被解析成
+		 * At8\Security\Pro\AT8_License_SDK —— 激活插件即 fatal。
+		 * 与同目录其它文件引用 \WP_Error / \WP_User 的写法保持一致。
+		 */
 		if ( self::$sdk_ready ) {
-			return AT8_License_SDK::license();
+			return \AT8_License_SDK::license();
 		}
 		self::$sdk_ready = true;
 
@@ -54,8 +61,15 @@ class License {
 			require_once AT8SEC_PRO_DIR . 'sdk/at8-license-sdk.php';
 		}
 
-		AT8_License_SDK::init( array(
-			'server_url'  => 'https://www.at8.fun',
+		/*
+		 * at8sec_pro_api_base 是文档承诺的公开钩子（docs/license-api.md、
+		 * docs/external-service-report.md）：测试站与镜像部署靠它把客户端指向
+		 * 另一台授权服务器。SDK 内部一个过滤器都不挂，所以由调用方在这里套上——
+		 * 没有回调时原样返回默认值，线上行为不变。untrailingslashit 是因为
+		 * SDK 的 api_url() 直接拼 '/wp-json/at8-license/v1'，多一个斜杠会拼成 '//'。
+		 */
+		\AT8_License_SDK::init( array(
+			'server_url'  => untrailingslashit( (string) apply_filters( 'at8sec_pro_api_base', 'https://www.at8.fun' ) ),
 			'product'     => 'at8-security-pro',
 			'plugin_file' => AT8SEC_PRO_FILE,
 			'buy_url'     => 'https://www.at8.fun/store/',
@@ -66,7 +80,7 @@ class License {
 		// 兼容旧的 cron 钩子名：转发到 SDK 的每日复查
 		add_action( 'init', array( __CLASS__, 'sync_schedule' ), 21 );
 
-		return AT8_License_SDK::license();
+		return \AT8_License_SDK::license();
 	}
 
 	/** SDK 状态 → 本插件历史状态 */

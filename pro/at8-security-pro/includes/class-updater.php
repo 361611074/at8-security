@@ -197,13 +197,17 @@ class Updater {
 			return array();
 		}
 
-		// v2.1.0：经 SDK 签名调用 /update/check（旧的无签名 Api::update 已废弃）。
-		$sdk      = AT8_License_SDK::license();
+		// v2.1.0：经 SDK 签名调用 /update（旧的无签名 Api::update 已废弃）。
+		// 注意路径：服务器注册的是 /update，不是 /update/check —— 后者 404，
+		// 更新检查因此永远拿不到响应。见 at8-license-server/includes/class-rest.php
+		// 与 docs/api.md。
+		// 前导反斜杠不可省：本文件在 namespace At8\Security\Pro 内，而 SDK 的类是全局的。
+		$sdk      = \AT8_License_SDK::license();
 		$response = null;
 
 		if ( $sdk ) {
 			$res = $sdk->client()->post(
-				'/update/check',
+				'/update',
 				array(
 					'product'  => 'at8-security-pro',
 					'version'  => AT8SEC_PRO_VERSION,
@@ -214,7 +218,7 @@ class Updater {
 
 			if (
 				$res['http'] !== null && $res['http'] < 300
-				&& ! empty( $res['data']['success'] ) && ! empty( $res['data']['update_available'] )
+				&& ! empty( $res['data']['valid'] )
 			) {
 				$response = $res['data'];
 			}

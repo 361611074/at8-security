@@ -153,7 +153,14 @@ class AT8SDK_License
             return '授权码格式不正确';
         }
 
-        $res = $this->client->post('/license/activate', [
+        /*
+         * The server registers /activate, /validate, /deactivate and /update
+         * under both namespaces (see at8-license-server/includes/class-rest.php
+         * and docs/api.md). There is no /license/ segment and no /verify --
+         * a /license/… call answered 404, which made activation impossible
+         * against any deployment.
+         */
+        $res = $this->client->post('/activate', [
             'product'        => $this->config->product,
             'site_url'       => $this->config->site_url(),
             'site_name'      => get_bloginfo('name'),
@@ -166,13 +173,24 @@ class AT8SDK_License
             return '无法连接授权服务器，请稍后重试（' . $res['error'] . '）';
         }
 
-        if ($res['http'] >= 200 && $res['http'] < 300 && !empty($res['data']['success'])) {
+        // The server answers with `valid` + `status`, never with `success`
+        // (docs/api.md). Treating the absence of `success` as a refusal turned
+        // an HTTP 200 {"valid":true} into an error.
+        if ($res['http'] >= 200 && $res['http'] < 300 && !empty($res['data']['valid'])) {
             $d = $res['data'];
             $this->save_state([
                 'key'          => $key,
                 'status'       => 'active',
-                'license_type' => isset($d['license_type']) ? $d['license_type'] : '',
-                'lifetime'     => !empty($d['lifetime']),
+                /*
+                 * The server reports the plan as `plan` => "lifetime" | "yearly";
+                 * there is no `lifetime` flag and no `license_type` in the
+                 * answer. Reading only `lifetime` left every licence looking
+                 * like a subscription.
+                 */
+                'license_type' => isset($d['license_type']) ? $d['license_type']
+                    : (isset($d['plan']) ? (string) $d['plan'] : ''),
+                'lifetime'     => !empty($d['lifetime'])
+                    || (isset($d['plan']) && 'lifetime' === $d['plan']),
                 'expires_at'   => isset($d['expires_at']) ? (int) $d['expires_at'] : 0,
                 'grace_days'   => isset($d['grace_days']) ? (int) $d['grace_days'] : 7,
                 'max_sites'    => isset($d['max_sites']) ? (int) $d['max_sites'] : 1,
@@ -205,7 +223,7 @@ class AT8SDK_License
             return true;
         }
 
-        $res = $this->client->post('/license/deactivate', [
+        $res = $this->client->post('/deactivate', [
             'product'  => $this->config->product,
             'site_url' => $this->config->site_url(),
         ], $key);
@@ -214,7 +232,10 @@ class AT8SDK_License
             return '无法连接授权服务器，请稍后重试';
         }
 
-        if ($res['http'] >= 200 && $res['http'] < 300 && !empty($res['data']['success'])) {
+        // The server answers with `valid` + `status`, never with `success`
+        // (docs/api.md). Treating the absence of `success` as a refusal turned
+        // an HTTP 200 {"valid":true} into an error.
+        if ($res['http'] >= 200 && $res['http'] < 300 && !empty($res['data']['valid'])) {
             delete_option($this->config->state_option());
             AT8SDK_Scheduler::unschedule($this->config);
             return true;
@@ -231,7 +252,9 @@ class AT8SDK_License
             return;
         }
 
-        $res = $this->client->post('/license/verify', [
+        // The periodic heartbeat is the server's /validate (docs/api.md:
+        // "只回状态不新增绑定"). The route is not called /verify.
+        $res = $this->client->post('/validate', [
             'product'  => $this->config->product,
             'site_url' => $this->config->site_url(),
             'version'  => $this->plugin_version(),
@@ -250,7 +273,10 @@ class AT8SDK_License
             return;
         }
 
-        if ($res['http'] >= 200 && $res['http'] < 300 && !empty($res['data']['success'])) {
+        // The server answers with `valid` + `status`, never with `success`
+        // (docs/api.md). Treating the absence of `success` as a refusal turned
+        // an HTTP 200 {"valid":true} into an error.
+        if ($res['http'] >= 200 && $res['http'] < 300 && !empty($res['data']['valid'])) {
             $d = $res['data'];
             $state['status']        = 'active';
             $state['license_type']  = isset($d['license_type']) ? $d['license_type'] : (isset($state['license_type']) ? $state['license_type'] : '');

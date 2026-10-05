@@ -27,13 +27,24 @@ class AT8SDK_Client
 
     /**
      * POST 请求。
-     * @param string $path  API 路径，如 /license/activate
+     * @param string $path  API 路径，如 /activate
      * @param array  $body  JSON body
      * @param string $key   授权码（canonical）
      * @return array ['http'=>int|null, 'data'=>array|null, 'error'=>string|null]
      */
     public function post($path, $body, $key = '')
     {
+        /*
+         * The server reads the key out of the body, not out of the signature
+         * headers: /activate, /validate and /update all declare `license` as a
+         * required param (at8-license-server/includes/class-rest.php, and
+         * docs/api.md). Sending the key only in X-AT8-Key answered
+         * 400 rest_missing_callback_param.
+         */
+        if ($key !== '' && !isset($body['license'])) {
+            $body['license'] = $key;
+        }
+
         $url  = $this->config->api_url($path);
         $json = wp_json_encode($body);
         return $this->request('POST', $url, $json, $key);

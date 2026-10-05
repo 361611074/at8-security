@@ -71,7 +71,10 @@ if (!class_exists('AT8SDK_AdminPage')) {
             $result = true;
 
             if ($action === 'activate') {
-                $key = isset($_POST['at8sdk_key']) ? wp_unslash($_POST['at8sdk_key']) : '';
+                // activate() normalises the key again (upper-cased, everything
+                // outside [A-Za-z0-9] dropped), so sanitising here changes no
+                // behaviour -- it just stops the raw superglobal being read.
+                $key = isset($_POST['at8sdk_key']) ? sanitize_text_field(wp_unslash($_POST['at8sdk_key'])) : '';
                 $result = $license->activate($key);
             } elseif ($action === 'deactivate') {
                 $result = $license->deactivate();
@@ -125,7 +128,16 @@ if (!class_exists('AT8SDK_AdminPage')) {
             <div class="wrap">
                 <h1>授权管理 — <?php echo esc_html($config->product); ?></h1>
 
-                <?php if (!empty($_GET['at8sdk_msg'])) :
+                <?php
+                /*
+                 * A flash message written by our own redirect two lines up in
+                 * handle(). It carries no state change and is sanitised and
+                 * escaped before it reaches the page, so there is nothing here
+                 * for a nonce to protect.
+                 */
+                // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flash from our own redirect.
+                if (!empty($_GET['at8sdk_msg'])) :
+                    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- same flash value, sanitised here and escaped on output.
                     $msg = sanitize_text_field(wp_unslash($_GET['at8sdk_msg']));
                     if (strpos($msg, 'error:') === 0) : ?>
                         <div class="notice notice-error"><p><?php echo esc_html(rawurldecode(substr($msg, 6))); ?></p></div>

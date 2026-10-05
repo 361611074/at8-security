@@ -109,8 +109,17 @@ class WAF {
 		 * live testing: empty-UA server-to-server callbacks such as payment
 		 * notifies were being denied). Judge by the URI instead: anything
 		 * under /wp-json/ is a REST request by definition.
+		 *
+		 * The URI is unslashed and sanitised before it is looked at. It is
+		 * only ever substring-matched, never echoed or stored, but reading
+		 * superglobals raw is what the directory's scanner flags and the
+		 * fix costs nothing here.
 		 */
-		if ( strpos( isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '', '/wp-json/' ) !== false
+		$request_uri = isset( $_SERVER['REQUEST_URI'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) )
+			: '';
+
+		if ( strpos( $request_uri, '/wp-json/' ) !== false
 			|| ( defined( 'REST_REQUEST' ) && REST_REQUEST )
 			|| wp_doing_ajax() ) {
 			return;

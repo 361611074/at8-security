@@ -32,7 +32,7 @@ ZIP:                PASS
 | 项目 | 内容 |
 |---|---|
 | 检查项 | `PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound` |
-| 位置 | `at8-security.php:83` |
+| 位置 | `at8-security.php:103` |
 | 处置 | 保留调用，接受该 WARNING（产品决策，2026-09-25） |
 
 实测证据：在测试站运行内核上读取 `WP_Textdomain_Registry`，`get_paths_for_domain()` 只搜索
@@ -99,9 +99,13 @@ NOT READY FOR WORDPRESS.ORG SUBMISSION
 
 | 文件 | 版本 | 条目 | 字节 | MD5 | SHA256 |
 |---|---|---|---|---|---|
-| `at8-security-2.0.3.zip` | 2.0.3 | 29 | 71,974 | `9fdd38886b55f8cdd622344ff87a513a` | `ff67ab9b9669946517f822f15077d1a6d1ce68c67ee19907ff2284b2ec9e96ef` |
-| `at8-security-pro-2.0.3.zip` | 2.0.3 | 23 | 74,326 | `5e49c7539cc9ec939d2a14ca7fbd825a` | `9ab445b958b280aedd9f781303fce6ecd967eb37dce452c51ac9200697ab5911` |
+| `at8-security-2.0.3.zip` | 2.0.3 | 29 | 72,266 | `cdbde9bb055244057a277093fcc707a7` | `d1b5c5eb98d00a23124448f3688ea77637237a85432f53d09cfb192a345117ea` |
+| `at8-security-pro-2.0.3.zip` | 2.0.3 | 31 | 89,945 | `2e1cc32a311195ee8f1e015e7331a72a` | `93382b6a9ff86819ad46835325538ba0babe1892d04dffa3dd4adde07a56dac8` |
 | `at8-license-server-1.2.0.zip` | 1.2.0 | 18 | 54,013 | `788c9fd90ee3c95886db65acf887b259` | `85437766fce0f5b8a3dd79667d5a3d1fc69efa01c940326ef1d3117c062458ed` |
+
+（2026-10-04 重建：免费版补齐 WAF 输入净化，Pro 修掉激活致命错误、SDK 输入净化与
+扫描器处置；条目数因此由 23 增至 31——Pro 的 `sdk/` 8 个 PHP 文件已计入。
+license-server 本轮未改动，哈希与上轮一致。）
 
 构建报告：`dist/BUILD-REPORT.json`（三个包 `passed: true`，0 problem）。
 
@@ -138,7 +142,7 @@ NOT READY FOR WORDPRESS.ORG SUBMISSION
 | `at8ls-spec.py` | **97/97** | 规范符合性：带数据迁移 / 审计 / sha256 / token 期限 / 双命名空间 / 卸载策略 / 语言包 |
 | `at8ls-publish.py` | **73/73** | 发布链路：上传 / 状态 / 签名下载 / token 过期 / 哈希校验 / 撤回 / 更新下发 |
 | `at8sec-attack.py` | **30/30** | 对抗：越权 / 缺 nonce / 注入 / 超大 key / 无 key / 限流 / 密钥存储 |
-| `at8sec-lint-zips.py` | **55 文件全通过** | 用目标解释器 PHP 8.3.33 对发行 zip 逐文件 lint |
+| `at8sec-lint-zips.py` | **63 文件全通过** | 用目标解释器 PHP 8.3.33 对发行 zip 逐文件 lint |
 | `at8sec-build-zips.py` | **3/3 PASS** | §65 六项 zip 审计：结构 / 禁用文件 / 禁用字符串 / 密钥 / 许可 / 语法 |
 | `at8sec-plugin-check.py` | 见上 | 官方 Plugin Check（装在测试站对发行 zip 跑） |
 
@@ -203,6 +207,52 @@ Pro 原本完全没有该段，一并补上。因为改动的是 readme，免费
 上表的 MD5 / SHA256 已按重建结果更新（license-server 未改动，哈希不变）。
 
 免费版 Plugin Check 复测：**0 ERROR / 0 CRITICAL / 1 WARNING**，与本轮之前一致。
+
+### 2026-10-04 修复
+
+| 问题 | 严重度 | 修复 |
+|---|---|---|
+| Pro 激活即 fatal：`Class "At8\Security\Pro\AT8_License_SDK" not found` | **致命** | `sdk/` 下的类是**全局**类（不声明 namespace），而 `includes/class-license.php`、`includes/class-updater.php` 在 `namespace At8\Security\Pro` 内，未加前导反斜杠时被解析成 `At8\Security\Pro\AT8_License_SDK`。4 处调用点补 `\`，与同目录引用 `\WP_Error` 的写法一致 |
+| `at8sec_pro_api_base` 过滤器失效 | **高** | 该钩子被 `docs/license-api.md`、`docs/external-service-report.md` 写成公开契约（测试站/镜像靠它换授权服务器地址），但新 SDK 内部一个 `apply_filters` 都不挂 → 钩子空挂，客户端永远打 `www.at8.fun`。改由调用方套上：`server_url => untrailingslashit( apply_filters( 'at8sec_pro_api_base', 'https://www.at8.fun' ) )`；无回调时行为不变 |
+| 免费版 `class-waf.php:113` 读裸 `$_SERVER['REQUEST_URI']` | 低（仅子串匹配） | 改为 `sanitize_text_field( wp_unslash( … ) )` |
+| Pro SDK 授权码输入未净化 | 低 | `sdk/includes/class-adminpage.php:74` 补 `sanitize_text_field()` |
+| SDK 扫描器提示 1 ERROR / 5 WARNING | 无（误报/死代码） | 逐条加 `phpcs:ignore` + 理由；`sdk/` 目录现零发现 |
+
+#### SDK 与授权服务器的三处契约断裂（都导致 Pro 永远激活不了）
+
+SDK 不是照本文档的 API 写的，而是照另一套（不存在的）接口写的。三处错位叠加，
+任何一次激活都会失败；`git log -S "/license/activate"` 证实**服务器端从未有过 `/license/` 路由**：
+
+| # | SDK 原来做的 | 服务器 / `docs/api.md` 实际约定 | 症状 |
+|---|---|---|---|
+| 1 | `POST /license/activate`、`/license/deactivate`、`/license/verify`；更新器调 `/update/check` | `POST /activate`、`/validate`、`/deactivate`、`/update`；且**没有** `verify` 路由 | HTTP 404 |
+| 2 | 密钥只放 `X-AT8-Key` 签名头 | 服务器**完全不读** `X-AT8-*`，密钥走 body 的 `license`（`/activate`、`/validate`、`/update` 必填） | HTTP 400 `rest_missing_callback_param` |
+| 3 | 以 `$res['data']['success']` 判成功 | 服务器返回 `valid` + `status`，**从不返回** `success` | HTTP 200 也被当成失败 |
+| 4 | 读 `$d['lifetime']` / `license_type` 判断套餐 | 服务器只给 `plan` => `lifetime` \| `yearly` | 终身授权一律显示成订阅 |
+| 5 | 更新检查要求 `$res['data']['update_available']` | 服务器不返回该字段（只有 `valid` + `version`） | 有新版本也永远不被提供 |
+
+修复：路径改对（`verify` → `/validate`）；`AT8SDK_Client::post()` 在 `$key` 非空时把
+`license` 并入 body；四处成功判定由 `success` 改 `valid`；`lifetime` /
+`license_type` 回落到 `plan`；更新检查去掉 `update_available`（`version` 非空本身
+已足以判断，代码后面也确实这样校验）。
+
+验证（`at8ls-tests/probe-activate.php`，在 `http_response` 上抓原始报文）：
+`HTTP 200 {"valid":true,"status":"active","plan":"lifetime"}` → `ACTIVATE_RESULT: OK`。
+
+> ⚠️ **另三个产品有同样的病**：测试站上的 `at8-article-pro`、`at8-site-accelerator-pro`、
+> `at8-smtp-pro` 各自内嵌了同一份 SDK 副本，同样是 `/license/activate` + 只放头里 +
+> 判 `success`。它们不在本仓库，需要各自同步修复。
+>
+> ⚠️ **类名冲突**：四份 SDK 都用 `class AT8_License_SDK` 配 `class_exists` 守卫，
+> 同站并存时**谁先加载谁生效**——一个产品会用到另一个产品的 SDK 副本。因此本轮验证时
+> 临时停用了那三个插件，跑完已还原。根治需要给 SDK 的类名加产品前缀。
+
+验证：测试站停用→激活 Pro，`debug.log` **为空**（无 fatal）；63 个 PHP 文件在 PHP 8.3.33
+下全部解析通过；三个 zip §65 审计 0 problem。
+
+**打包注意**：发行必须用仓库根目录的 `at8sec-build-zips.py`（含 §65 六项审计，
+`SKIP_FILES` 已排除 `AGENTS.md`）。工作缓冲区里那份简化副本会把 `AGENTS.md` 打进 zip，
+Plugin Check 随即报 `unexpected_markdown_file`。
 
 ### 本轮补上的 §69 截图
 

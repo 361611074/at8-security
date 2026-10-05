@@ -60,7 +60,7 @@ FREE_WORDPRESS_ORG_READY = NO
 | 项目 | 内容 |
 |---|---|
 | 检查项 | `DiscouragedFunctions.load_plugin_textdomainFound` |
-| 位置 | `at8-security.php:83` |
+| 位置 | `at8-security.php:103` |
 | 官方说明 | 「插件托管在 WordPress.org 时不再需要手动调用，WordPress 会自动加载翻译」 |
 | 处置 | **保留调用，接受该 WARNING**（产品决策，2026-09-25） |
 
@@ -99,19 +99,53 @@ at8-security paths: .../wp-content/languages/plugins, .../wp-content/languages/t
 
 ```text
 == at8-security-pro-2.0.3.zip ==
-   ERROR 4  WARNING 3  CRITICAL 0
+   ERROR 4  WARNING 15  CRITICAL 0
    codes: load_plugin_textdomainFound, OffloadedContent,
-          plugin_updater_detected, update_modification_detected
+          plugin_updater_detected, update_modification_detected,
+          NonPrefixedNamespaceFound
 ```
 
 **两者都不提交 wp.org**，因此这些不是上架风险：
 
-| 检查项 | 为何存在 | 是否问题 |
+| 检查项 | 级别 | 为何存在 | 是否问题 |
+|---|---|---|---|
+| `plugin_updater_detected` ×2 | ERROR | Pro 走自建授权服务器更新；`Update URI` 头正是 WP 5.8+ 对**目录外**插件的官方更新方式（Guideline 8 只约束目录内插件） | 否，设计如此 |
+| `OffloadedContent` ×2 | ERROR | Turnstile 是托管校验控件，`api.js` 必须从 Cloudflare 取；功能默认关闭、需站长自带密钥，readme 已声明 | 否，设计如此 |
+| `update_modification_detected` ×2 | WARNING | 同上（`pre_set_site_transient_update_plugins`） | 否，设计如此 |
+| `NonPrefixedNamespaceFound` ×12 | WARNING | 命名空间为 `At8\Security\Pro`；该约定面向目录内插件，改名要动 12 个文件且无功能收益 | 否，设计如此 |
+| `load_plugin_textdomainFound` | WARNING | 自建分发，永远不会有语言包，内置翻译是唯一翻译 | 否 |
+
+> Pro 的 4 条 ERROR 全部是「自建分发 + 托管控件」的必然结果：去掉任何一条都等于
+> 去掉自动更新或 Turnstile 本身。Pro 永不进目录，不构成上架风险。
+
+### SDK 目录（`sdk/`）的发现——本轮已处理
+
+Pro 内嵌的授权 SDK 另报 1 ERROR / 5 WARNING，2026-10-04 逐条处置：
+
+| 位置 | 检查项 | 处置 |
 |---|---|---|
-| `plugin_updater_detected` | Pro 走自建授权服务器更新（Guideline 8 只约束**目录内**插件） | 否，设计如此 |
-| `update_modification_detected` | 同上 | 否 |
-| `OffloadedContent` | Turnstile 是托管校验控件，且可关闭、已在 readme 声明 | 否 |
-| `load_plugin_textdomainFound` | 自建分发，永远不会有语言包，内置翻译是唯一翻译 | 否 |
+| `sdk/includes/class-adminpage.php:74` | `InputNotSanitized` | **真修复**：授权码输入补 `sanitize_text_field()`（`activate()` 本就会归一化，行为不变） |
+| `sdk/includes/class-adminpage.php:128,129` | `NonceVerification` ×2 | 加 `phpcs:ignore` + 理由：只读 flash，值由本插件自己的 `wp_safe_redirect` 写入，输出前已净化并转义 |
+| `sdk/includes/class-updater.php:114` | `NonceVerification` ×2 | 加 `phpcs:ignore` + 理由：本产品 `update => false`，该文件**未激活**，且已有 `update_plugins` 能力校验 |
+| `sdk/includes/class-updater.php:134` | `OutputNotEscaped` | 加 `phpcs:ignore` + 理由：输出是 ZIP 二进制流，转义会损坏压缩包 |
+
+处置后 `sdk/` 目录在 Plugin Check 中**零发现**。
+
+### 免费版本轮的修复（2026-10-04）
+
+| 位置 | 检查项 | 处置 |
+|---|---|---|
+| `includes/class-waf.php:113` | `MissingUnslash` + `InputNotSanitized` | **真修复**：`$_SERVER['REQUEST_URI']` 改为 `sanitize_text_field( wp_unslash( … ) )`。该值只做子串匹配、从不输出或落库，但读裸超全局正是扫描器会拦的写法 |
+
+> 这两条是 `b7ddf02`（WAF 按 URI 判断 REST）引入的，本轮补齐净化。修完免费版回到
+> **0 ERROR / 1 WARNING**，与下方记录一致。
+
+### 打包卫生
+
+`AGENTS.md` 是写给改代码的人看的，不该进发行包。仓库的 `at8sec-build-zips.py`
+（§65 六项审计版）已把 `AGENTS.md` 放进 `SKIP_FILES` 与 `FORBIDDEN_PATHS`；
+用**旧版简化脚本**打包会让它混进 zip，Plugin Check 随即报
+`unexpected_markdown_file`。发行一律用仓库根目录的那个脚本。
 
 ---
 
