@@ -4,12 +4,17 @@
 Version:   2.0.3
 Plugin:    at8-security
 Date:      2026-09-25
-Status:    NOT READY
+Assets:    2026-10-11
+Status:    READY
 ```
 
-**未通过项**：§69 上架素材中的 icon 与 banner 尚未制作（品牌决策，需人工确认方案）。
-截图已完成，见 `wordpress-org-assets/`。代码、许可、安全、边界、readme、ZIP 全部 PASS。
-详见 `docs/wordpress-org-compliance-report.md` 第四节。
+**结论**：§69 上架素材（icon / banner / screenshot）已全部就位，代码、许可、安全、边界、
+readme、ZIP 全部 PASS。详见 `docs/wordpress-org-compliance-report.md` 第四节。
+
+> **范围说明（2026-10-11）**：本报告最初覆盖 free / Pro / 授权服务器三个产品，因为当时它们
+> 同在一个仓库。三者已拆分为独立仓库（`at8-security-pro`、`at8-license-server-v2`），
+> 本仓库只保留免费版；报告中关于 Pro 与授权服务器的记述作为**历史记录**保留，
+> 其代码与后续变更以各自仓库为准。
 
 ---
 
@@ -23,7 +28,7 @@ External Services:  PASS
 Tracking:           PASS
 Remote Code:        PASS
 Readme:             PASS
-Assets:             PARTIAL (截图已制作；icon / banner 未制作)
+Assets:             PASS   (icon 128/256、banner 772x250/1544x500、screenshot 1-4)
 ZIP:                PASS
 ```
 
@@ -59,11 +64,12 @@ Secrets:                PASS
 
 证据见 `docs/security-audit-report.md`。要点：
 
-- `license-server` 数据库调用 **30/30 参数化**（12 处 `prepare()` + 18 处 `insert/update/delete` API），未参数化 0；
+- 免费版数据库调用全部参数化，未参数化 0；
 - 免费版出站请求 **0**；
 - 权限拒绝返回 **403**（不是 500）；
-- 授权密钥库内**不存明文**（HMAC-SHA256 + `wp_salt('auth')`），后台只显示掩码，完整密钥仅创建时展示一次；
 - `!important` 0、`eval`/`create_function`/`extract` 0、秘密模式 0。
+
+> 授权服务器侧的密钥存储与 DB 调用记录已随仓库拆分移至 `at8-license-server-v2`。
 
 ---
 
@@ -86,10 +92,11 @@ License Server:         PASS
 ## Final
 
 ```text
-NOT READY FOR WORDPRESS.ORG SUBMISSION
+READY FOR WORDPRESS.ORG SUBMISSION
 ```
 
-补齐 §69 素材后重跑本报告即可转 READY。
+素材已补齐（2026-10-11）。剩下只有提交动作：把 `wordpress-org-assets/` 的 8 个文件
+放进 SVN 的 `/assets` 目录（该目录不进插件 zip）。
 
 ---
 
@@ -100,30 +107,25 @@ NOT READY FOR WORDPRESS.ORG SUBMISSION
 | 文件 | 版本 | 条目 | 字节 | MD5 | SHA256 |
 |---|---|---|---|---|---|
 | `at8-security-2.0.3.zip` | 2.0.3 | 29 | 72,266 | `cdbde9bb055244057a277093fcc707a7` | `d1b5c5eb98d00a23124448f3688ea77637237a85432f53d09cfb192a345117ea` |
-| `at8-security-pro-2.0.3.zip` | 2.0.3 | 31 | 89,945 | `2e1cc32a311195ee8f1e015e7331a72a` | `93382b6a9ff86819ad46835325538ba0babe1892d04dffa3dd4adde07a56dac8` |
-| `at8-license-server-1.2.0.zip` | 1.2.0 | 18 | 54,013 | `788c9fd90ee3c95886db65acf887b259` | `85437766fce0f5b8a3dd79667d5a3d1fc69efa01c940326ef1d3117c062458ed` |
 
-（2026-10-04 重建：免费版补齐 WAF 输入净化，Pro 修掉激活致命错误、SDK 输入净化与
-扫描器处置；条目数因此由 23 增至 31——Pro 的 `sdk/` 8 个 PHP 文件已计入。
-license-server 本轮未改动，哈希与上轮一致。）
+（2026-10-04 重建：免费版补齐 WAF 输入净化。2026-10-11 仓库拆分后重新构建，
+哈希与拆分前**逐字节一致**，证明拆分未触碰免费版代码。）
 
-构建报告：`dist/BUILD-REPORT.json`（三个包 `passed: true`，0 problem）。
+构建报告：`dist/BUILD-REPORT.json`（`passed: true`，0 problem）。
+
+> Pro 与 license-server 的分发包由各自仓库构建，本仓库不再产出。
 
 ### 文档
 
 | 文件 | 内容 |
 |---|---|
-| `docs/architecture.md` | 三层架构与端到端链路 |
 | `docs/free-pro-boundary.md` | Free/Pro 边界契约 |
 | `docs/free-pro-boundary-report.md` | 边界验证报告 |
 | `docs/free-extension-api.md` | 19 个钩子的完整契约 |
-| `docs/license-api.md` | 授权生命周期与数据流 |
-| `docs/api.md` | REST 报文、状态码、限流 |
 | `docs/security.md` | 安全做法清单 |
 | `docs/security-audit-report.md` | 安全审计报告 |
 | `docs/privacy.md` | 隐私与外部服务声明 |
 | `docs/external-service-report.md` | 外部服务清单与审计 |
-| `docs/database.md` | 表结构与迁移规则 |
 | `docs/release.md` | 发布流程与 Checklist |
 | `docs/testing.md` | 测试脚本与覆盖清单 |
 | `docs/wordpress-org.md` | 上架流程 |
@@ -131,6 +133,9 @@ license-server 本轮未改动，哈希与上轮一致。）
 | `docs/third-party-license-report.md` | 第三方依赖审计报告 |
 | `docs/release-report.md` | 本文件 |
 | `THIRD-PARTY-LICENSES.md` | 第三方依赖登记表 |
+
+> 原先还列有 `architecture.md` / `api.md` / `database.md` / `license-api.md`——
+> 那四份是授权服务器的实现文档，已随仓库拆分移至 `at8-license-server-v2`。
 
 ---
 
@@ -195,60 +200,33 @@ license-server 本轮未改动，哈希与上轮一致。）
 
 | # | 事项 | 说明 |
 |---|---|---|
-| 1 | ~~制作 `screenshot-1..4.png`~~ | **已完成**，见 `wordpress-org-assets/` 与本轮补记 |
-| 2 | 制作 `icon-128x128.png` / `icon-256x256.png` | **品牌素材**，按规范 §92 需人工确定，不由 Agent 擅自设计 |
-| 3 | 制作 `banner-772x250.png` / `banner-1544x500.png` | 同上 |
+| 1 | ~~制作 `screenshot-1..4.png`~~ | **已完成** |
+| 2 | ~~制作 `icon-128x128.png` / `icon-256x256.png`~~ | **已完成**（2026-10-11，作者提供 512×512 主图） |
+| 3 | ~~制作 `banner-772x250.png` / `banner-1544x500.png`~~ | **已完成**（2026-10-11，作者提供源图） |
 | 4 | 素材放入 SVN `/assets` | **不进插件 zip**，WordPress.org 从 SVN 读取 |
+
+**素材已补齐，无剩余阻塞项。** 第 4 项是提交动作，不是待办内容。
 
 ### 本轮补上的非阻塞项
 
-`== Upgrade Notice ==` 已补齐：免费版原本只有 2.0.0 / 2.0.1，现补 2.0.2 / 2.0.3；
-Pro 原本完全没有该段，一并补上。因为改动的是 readme，免费版与 Pro 的 zip 内容变了，
-上表的 MD5 / SHA256 已按重建结果更新（license-server 未改动，哈希不变）。
+`== Upgrade Notice ==` 已补齐：免费版原本只有 2.0.0 / 2.0.1，现补 2.0.2 / 2.0.3。
+因为改动的是 readme，免费版的 zip 内容变了，上表的 MD5 / SHA256 已按重建结果更新。
 
 免费版 Plugin Check 复测：**0 ERROR / 0 CRITICAL / 1 WARNING**，与本轮之前一致。
 
-### 2026-10-04 修复
+### 2026-10-04 修复（免费版部分）
 
 | 问题 | 严重度 | 修复 |
 |---|---|---|
-| Pro 激活即 fatal：`Class "At8\Security\Pro\AT8_License_SDK" not found` | **致命** | `sdk/` 下的类是**全局**类（不声明 namespace），而 `includes/class-license.php`、`includes/class-updater.php` 在 `namespace At8\Security\Pro` 内，未加前导反斜杠时被解析成 `At8\Security\Pro\AT8_License_SDK`。4 处调用点补 `\`，与同目录引用 `\WP_Error` 的写法一致 |
-| `at8sec_pro_api_base` 过滤器失效 | **高** | 该钩子被 `docs/license-api.md`、`docs/external-service-report.md` 写成公开契约（测试站/镜像靠它换授权服务器地址），但新 SDK 内部一个 `apply_filters` 都不挂 → 钩子空挂，客户端永远打 `www.at8.fun`。改由调用方套上：`server_url => untrailingslashit( apply_filters( 'at8sec_pro_api_base', 'https://www.at8.fun' ) )`；无回调时行为不变 |
 | 免费版 `class-waf.php:113` 读裸 `$_SERVER['REQUEST_URI']` | 低（仅子串匹配） | 改为 `sanitize_text_field( wp_unslash( … ) )` |
-| Pro SDK 授权码输入未净化 | 低 | `sdk/includes/class-adminpage.php:74` 补 `sanitize_text_field()` |
-| SDK 扫描器提示 1 ERROR / 5 WARNING | 无（误报/死代码） | 逐条加 `phpcs:ignore` + 理由；`sdk/` 目录现零发现 |
 
-#### SDK 与授权服务器的三处契约断裂（都导致 Pro 永远激活不了）
+> **Pro 侧的修复已移出本报告。** 2026-10-04 那一轮同时修了 Pro 的激活致命错误
+> （命名空间内未加前导反斜杠，`AT8_License_SDK` 被解析成 `At8\Security\Pro\AT8_License_SDK`）、
+> `at8sec_pro_api_base` 钩子空挂、SDK 授权码未净化，以及 **SDK 与授权服务器的五处契约断裂**
+> （路由名、密钥位置、成功标志、套餐字段、更新可用标志）。这些都属于 `at8-security-pro`，
+> 完整记录见该仓库。免费版本轮只动了上面那一处。
 
-SDK 不是照本文档的 API 写的，而是照另一套（不存在的）接口写的。三处错位叠加，
-任何一次激活都会失败；`git log -S "/license/activate"` 证实**服务器端从未有过 `/license/` 路由**：
-
-| # | SDK 原来做的 | 服务器 / `docs/api.md` 实际约定 | 症状 |
-|---|---|---|---|
-| 1 | `POST /license/activate`、`/license/deactivate`、`/license/verify`；更新器调 `/update/check` | `POST /activate`、`/validate`、`/deactivate`、`/update`；且**没有** `verify` 路由 | HTTP 404 |
-| 2 | 密钥只放 `X-AT8-Key` 签名头 | 服务器**完全不读** `X-AT8-*`，密钥走 body 的 `license`（`/activate`、`/validate`、`/update` 必填） | HTTP 400 `rest_missing_callback_param` |
-| 3 | 以 `$res['data']['success']` 判成功 | 服务器返回 `valid` + `status`，**从不返回** `success` | HTTP 200 也被当成失败 |
-| 4 | 读 `$d['lifetime']` / `license_type` 判断套餐 | 服务器只给 `plan` => `lifetime` \| `yearly` | 终身授权一律显示成订阅 |
-| 5 | 更新检查要求 `$res['data']['update_available']` | 服务器不返回该字段（只有 `valid` + `version`） | 有新版本也永远不被提供 |
-
-修复：路径改对（`verify` → `/validate`）；`AT8SDK_Client::post()` 在 `$key` 非空时把
-`license` 并入 body；四处成功判定由 `success` 改 `valid`；`lifetime` /
-`license_type` 回落到 `plan`；更新检查去掉 `update_available`（`version` 非空本身
-已足以判断，代码后面也确实这样校验）。
-
-验证（`at8ls-tests/probe-activate.php`，在 `http_response` 上抓原始报文）：
-`HTTP 200 {"valid":true,"status":"active","plan":"lifetime"}` → `ACTIVATE_RESULT: OK`。
-
-> ⚠️ **另三个产品有同样的病**：测试站上的 `at8-article-pro`、`at8-site-accelerator-pro`、
-> `at8-smtp-pro` 各自内嵌了同一份 SDK 副本，同样是 `/license/activate` + 只放头里 +
-> 判 `success`。它们不在本仓库，需要各自同步修复。
->
-> ⚠️ **类名冲突**：四份 SDK 都用 `class AT8_License_SDK` 配 `class_exists` 守卫，
-> 同站并存时**谁先加载谁生效**——一个产品会用到另一个产品的 SDK 副本。因此本轮验证时
-> 临时停用了那三个插件，跑完已还原。根治需要给 SDK 的类名加产品前缀。
-
-验证：测试站停用→激活 Pro，`debug.log` **为空**（无 fatal）；63 个 PHP 文件在 PHP 8.3.33
-下全部解析通过；三个 zip §65 审计 0 problem。
+验证：免费版 23 个 PHP 文件在 PHP 8.3.33 下全部解析通过；`at8-security` zip §65 审计 0 problem。
 
 **打包注意**：发行必须用仓库根目录的 `at8sec-build-zips.py`（含 §65 六项审计，
 `SKIP_FILES` 已排除 `AGENTS.md`）。工作缓冲区里那份简化副本会把 `AGENTS.md` 打进 zip，

@@ -4,6 +4,7 @@
 
 **审计对象**：`at8-security` 2.0.3（上架包）
 **审计日期**：2026-09-25
+**素材复核**：2026-10-11（icon / banner 补齐后重跑第四节）
 **测试站**：`wordpress.xmm.fan`，WordPress 7.1.2 / PHP 8.3.33 / zh_CN
 
 ---
@@ -11,14 +12,13 @@
 ## 结论
 
 ```text
-FREE_WORDPRESS_ORG_READY = NO
+FREE_WORDPRESS_ORG_READY = YES
 
-原因：§69 上架素材中，icon 与 banner 尚未制作（品牌决策，需人工确认方案）。
-      截图已完成；代码、许可、安全、边界、readme、ZIP 全部 PASS。
+代码、许可、安全、边界、readme、ZIP 全部 PASS；
+§69 上架素材（icon 128/256、banner 772x250/1544x500、screenshot 1-4）已全部就位。
 ```
 
-素材是可补的独立工作项，不影响代码质量；在补齐前不满足 §98 的 `Assets` 条件，
-因此**不得提交**。
+满足 §98 的 `Assets` 条件，**可以提交 SVN**。
 
 ---
 
@@ -168,17 +168,35 @@ Pro 内嵌的授权 SDK 另报 1 ERROR / 5 WARNING，2026-10-04 逐条处置：
 | 插件名纯 ASCII | slug 由它生成，永久不可改 | `At8 Security` | PASS |
 
 **Readme 与素材的一致性**：readme 的 `== Screenshots ==` 声明了 4 张截图，
-但对应图片尚未制作 —— 见下节，属于未完成项。
+对应图片已制作并置于 `wordpress-org-assets/`，顺序与说明一一对应 —— 见下节。
 
 ---
 
-## 四、上架素材（§69）—— 部分完成
+## 四、上架素材（§69）—— 已完成
 
 | 素材 | 要求 | 现状 |
 |---|---|---|
-| `icon-128x128.png` / `icon-256x256.png` | 插件图标 | **未制作**（品牌决策） |
-| `banner-772x250.png` / `banner-1544x500.png` | 插件横幅 | **未制作**（品牌决策） |
+| `icon-128x128.png` / `icon-256x256.png` | 插件图标 | **已制作**（由 512×512 主图等比缩放） |
+| `banner-772x250.png` / `banner-1544x500.png` | 插件横幅 | **已制作**（源图即标准尺寸） |
 | `screenshot-1..4.png` | 与 readme 的 Screenshots 顺序对应 | **已制作**（`wordpress-org-assets/`） |
+
+全部 8 个文件位于 `wordpress-org-assets/` 根级，尺寸逐一核验：
+
+| 文件 | 尺寸 | 模式 |
+|---|---|---|
+| `icon-128x128.png` | 128 × 128 | RGBA（圆角透明） |
+| `icon-256x256.png` | 256 × 256 | RGBA（圆角透明） |
+| `banner-772x250.png` | 772 × 250 | RGB |
+| `banner-1544x500.png` | 1544 × 500 | RGB |
+| `screenshot-1..4.png` | 宽 1280 | RGB |
+
+### 图标与横幅
+
+图标与横幅由**作者提供**（按规范 §92，品牌素材不由 Agent 设计）：
+
+- 图标主图 512 × 512，圆角外透明、中心不透明，缩放到 128 / 256 使用；
+- 两张横幅的源文件**本身就是** wp.org 要求的 1544 × 500 与 772 × 250，未做任何重采样，
+  仅去掉调色板（`P` → `RGB`）。
 
 ### 截图 —— 已完成
 
@@ -206,9 +224,10 @@ readme 的 `== Screenshots ==` 已同步为：
 且长达 40 行（会把截图拉到 2700px 以上）。截图前用 `at8ls-tests/seed-audit.php`
 重置为一组英文样本行，地址取自 RFC 5737 文档网段。**样本行不是真实事件记录。**
 
-**判定：截图 PASS；icon / banner FAIL（未制作）。**
+**判定：icon / banner / 截图 全部 PASS。**
 
-**注意**：icon 与 banner 属于**品牌素材**，按规范 §92 不得由 Agent 擅自设计。
+**说明**：icon 与 banner 属于**品牌素材**，按规范 §92 由作者提供，Agent 只做尺寸规范化
+（等比缩放与调色板转换），不改动画面内容。
 
 ---
 
@@ -239,7 +258,7 @@ readme 的 `== Screenshots ==` 已同步为：
 | 远程可执行代码 | ★★★★ | **PASS** | 无远程 JS/PHP；无 `eval` 类函数 |
 | 未声明外部服务 | ★★★★ | **PASS** | readme + privacy.md 一致 |
 | readme 规范性 | ★★★ | **PASS** | 见第三节 |
-| 上架素材 | ★★★ | **部分完成** | 截图已制作；icon / banner 待定（见第四节） |
+| 上架素材 | ★★★ | **PASS** | icon / banner / 截图全部就位（见第四节） |
 | ZIP 结构 | ★★★ | **PASS** | 见第五节 |
 | 数据库迁移破坏数据 | ★★ | **PASS** | 只 ADD COLUMN，不 DROP；带数据实测 |
 | 卸载残留 / 误删 | ★★ | **PASS** | 卸载清本站数据；license-server 默认保留商业记录 |
@@ -266,9 +285,10 @@ readme 的 `== Screenshots ==` 已同步为：
 | # | 事项 | 阻塞上架 | 责任 |
 |---|---|---|---|
 | 1 | 制作 `screenshot-1..4.png`（对应 readme 的 4 条说明） | ~~是~~ | **已完成**（见第四节） |
-| 2 | 制作 `icon-128x128.png` / `icon-256x256.png` | **是** | 品牌决策，需人工确认方案 |
-| 3 | 制作 `banner-772x250.png` / `banner-1544x500.png` | **是** | 品牌决策，需人工确认方案 |
-| 4 | 素材放入 SVN `/assets` 目录（**不进插件 zip**） | 是 | 提交时 |
-| 5 | readme 的 `== Upgrade Notice ==` 补 2.0.2 / 2.0.3 条目 | 否 | **已完成**（免费版补 2.0.2/2.0.3；Pro 一并补上该段） |
+| 2 | 制作 `icon-128x128.png` / `icon-256x256.png` | ~~是~~ | **已完成**（2026-10-11，作者提供主图） |
+| 3 | 制作 `banner-772x250.png` / `banner-1544x500.png` | ~~是~~ | **已完成**（2026-10-11，作者提供源图） |
+| 4 | 素材放入 SVN `/assets` 目录（**不进插件 zip**） | 是 | 提交时执行 |
+| 5 | readme 的 `== Upgrade Notice ==` 补 2.0.2 / 2.0.3 条目 | 否 | **已完成** |
 
-补齐 2–4 后重跑本报告，`FREE_WORDPRESS_ORG_READY` 方可置 `YES`。
+素材已补齐，`FREE_WORDPRESS_ORG_READY = YES`。剩下只有第 4 项——**提交时**把
+`wordpress-org-assets/` 里的 8 个文件上传到 SVN 的 `/assets` 目录（该目录不进插件 zip）。

@@ -8,6 +8,25 @@
 
 ---
 
+## 2026-10-11 · 上架素材补齐：icon 与 banner —— `READY = YES`
+
+§69 素材的最后两项（icon、banner）由**作者提供**，Agent 只做尺寸规范化，不改动画面内容：
+
+| 文件 | 来源 | 处理 |
+|---|---|---|
+| `icon-128x128.png` / `icon-256x256.png` | 512 × 512 主图（圆角外透明） | 等比 LANCZOS 缩放 |
+| `banner-772x250.png` / `banner-1544x500.png` | 源图本身即 wp.org 标准尺寸 | 仅去掉调色板（`P` → `RGB`），**未重采样** |
+
+- 移除 `wordpress-org-assets/proposals/`：此前 Agent 起草的三套方案（a-blue / b-midnight /
+  c-light）已被正式素材取代，留着只会造成"到底用哪套"的困惑。
+- `docs/wordpress-org-compliance-report.md` 与 `docs/release-report.md`：
+  `FREE_WORDPRESS_ORG_READY` 由 `NO` 改为 **`YES`**，第四节素材表全部转为 PASS。
+
+`wordpress-org-assets/` 现含 8 个文件（icon ×2、banner ×2、screenshot ×4），尺寸逐一核验通过。
+**剩余动作只有提交**：上传到 SVN 的 `/assets` 目录（该目录不进插件 zip）。
+
+---
+
 ## 2026-10-11 · 仓库拆分：Pro 与授权服务器移出本仓库
 
 此前本仓库是一个 monorepo，免费版、Pro 附加组件、授权服务器三套代码混在同一棵历史里：

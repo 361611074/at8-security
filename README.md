@@ -21,12 +21,11 @@
 
 ```text
 free/at8-security/         免费版插件（上架 WordPress.org，slug: at8-security）
-wordpress-org-assets/      wp.org 上架素材（截图 4 张已完成；icon / banner 方案待定）
+wordpress-org-assets/      wp.org 上架素材（icon 128/256、banner 772x250/1544x500、screenshot 1-4）
 docs/                      边界 / 扩展 API / 安全 / 隐私 / 测试 / 发布 / 审计报告
 AGENTS.md                  开发约定（改代码前先读）
 THIRD-PARTY-LICENSES.md    第三方依赖登记表（当前 0 个依赖）
 at8sec-build-zips.py       构建 + §65 六项 zip 审计
-at8sec-wporg-brand.py      生成 wp.org icon / banner 方案
 dist/                      构建产物 zip（本地构建，不入库）
 CHANGELOG.md               更新记录
 ```
@@ -56,8 +55,11 @@ python at8sec-build-zips.py --only free  # 等价（本仓库只有免费版一�
 
 ## 上架状态
 
-`FREE_WORDPRESS_ORG_READY = NO` —— 唯一未完成项是 wp.org 上架素材（icon / banner；截图已完成）。
-代码、许可、安全、边界、readme、ZIP 全部 PASS。
+`FREE_WORDPRESS_ORG_READY = YES` —— 代码、许可、安全、边界、readme、ZIP、**上架素材**
+（icon / banner / screenshot）全部 PASS。
+
+剩余动作只有提交：把 `wordpress-org-assets/` 的 8 个文件放进 SVN 的 `/assets` 目录
+（该目录**不进**插件 zip）。
 详见 `docs/wordpress-org-compliance-report.md` 与 `docs/release-report.md`。
 
 ## 作者
