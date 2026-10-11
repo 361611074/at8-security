@@ -1,7 +1,13 @@
-# AGENTS.md — AT8 安全产品线
+# AGENTS.md — at8-security（免费版）
 
-本仓库是 AT8 商业 WordPress 产品的第一个产品线：`at8-security`（免费版，上架 WordPress.org）、
-`at8-security-pro`（商业附加组件，自建分发）、`at8-license-server`（授权与更新服务端，只跑在自家站点）。
+本仓库只承载 **`at8-security` 免费版**（上架 WordPress.org，slug `at8-security`）。
+
+商业附加组件与授权服务器是**独立仓库**，代码不在本仓库、也不得复制进来：
+
+| 产品 | 仓库 |
+|---|---|
+| `at8-security-pro`（商业版） | https://github.com/361611074/at8-security-pro |
+| `at8-license-server`（授权服务器） | https://github.com/361611074/at8-license-server-v2 |
 
 **基线规范**：`docs/AT8-WordPress-商业产品通用架构规范-v2.0.md`。本文件是它的落地版；冲突时以规范为准，并把差异写进本文件。
 
@@ -15,28 +21,25 @@
 ├── README.md  CHANGELOG.md
 ├── THIRD-PARTY-LICENSES.md       第三方依赖登记表（当前：0 个依赖）
 ├── at8sec-build-zips.py          构建 + §65 六项 zip 审计（在仓库根，路径自推导）
-├── docs/                         架构 / API / 边界 / 扩展 API / 安全 / 隐私 / 数据库 / 测试 / 发布 / wp.org
+├── at8sec-wporg-brand.py         生成 wp.org icon / banner 方案
+├── docs/                         边界 / 扩展 API / 安全 / 隐私 / 测试 / 发布 / wp.org / 审计报告
 │   ├── AT8-WordPress-商业产品通用架构规范-v2.0.md
-│   ├── architecture.md  free-pro-boundary.md  free-extension-api.md
-│   ├── license-api.md   api.md  security.md   privacy.md
-│   ├── database.md      release.md  testing.md  wordpress-org.md
+│   ├── free-pro-boundary.md  free-extension-api.md
+│   ├── security.md   privacy.md   testing.md   release.md   wordpress-org.md
 │   └── *-report.md              上架合规 / 安全审计 / 边界验证 / 第三方 / 外部服务 / 发布
-├── free/at8-security/            免费版：上架 wp.org，GPLv2，可独立运行
-├── pro/at8-security-pro/         商业版：依赖免费版，需 License
-├── license-server/at8-license-server/   授权服务器：只在 at8.fun 运行
+├── free/at8-security/            免费版插件：上架 wp.org，GPLv2，可独立运行
+├── wordpress-org-assets/         wp.org 上架素材（截图已完成；icon / banner 方案待定）
 └── dist/                         构建产物（不入 Git）
 ```
 
-三层对应：
-- **产品层** = `free/` + `pro/`
-- **平台层** = `license-server/`（Customer / License / Sites / Update；Order / Subscription / Payment 待建）
-- **基础设施层** = GitHub、测试站、CDN、支付平台
+与兄弟仓库的接口只有一处：**免费版通过公开钩子暴露扩展点，Pro 挂上去**。
+免费版内零 Pro 代码；完整契约见 `docs/free-extension-api.md`。
 
 ---
 
 ## 2. 硬性规则（每条都可被验证）
 
-1. **改前先读架构**：`docs/architecture.md` 与要改的文件本身，不要凭印象改。
+1. **改前先读文档**：`docs/free-pro-boundary.md`、`docs/free-extension-api.md` 与要改的文件本身，不要凭印象改。
 2. **不得擅自改数据库结构**。改动必须走 `Db::DB_VERSION` 递增 + dbDelta 迁移，且先说明影响、经人类确认。
 3. **不得删除现有功能**，不得注释掉检查来"修"问题。
 4. **不得引入未经批准的第三方依赖**；引入必须登记 `docs/release.md` 的依赖表（package/version/license/source/purpose）。
@@ -47,10 +50,10 @@
 9. **后台操作必须 capability + nonce**；REST 必须有明确权限策略 + 限流 + 错误信息最小化。
 10. **改完必须跑测试**（`docs/testing.md`）；**失败的测试不得假装通过**，不得删断言让它变绿。
 11. **不得为修一个小问题重写整个项目**——增量修复，保持架构稳定。
-12. **架构级改动先说明影响**（涉及数据、License、支付、权限、外部服务、用户数据、安全策略、删除数据、Breaking Change 时，必须经人类确认）。
-13. **不得删除审计日志**（`wp_at8_audit_logs` 与免费版的审计表）。它是商业记录，随插件删除也不默认清空。
-14. **不得绕过 License / Subscription 业务规则**（免费版不得因授权失效而整体失效；Pro 失效走宽限期）。
-15. **不得收集未批准的用户数据**。发到外部服务器的每一个字段都必须能在 `docs/privacy.md` 里找到理由。
+12. **架构级改动先说明影响**（涉及数据、权限、外部服务、用户数据、安全策略、删除数据、Breaking Change 时，必须经人类确认）。
+13. **不得删除审计日志**（免费版的审计表）。它是安全记录，随插件删除也不默认清空。
+14. **免费版不得依赖授权状态**：任何免费功能都不得因 Pro 授权缺失/失效而失效；免费版不得调用授权服务器，也不得读取 License 选项。
+15. **不得收集未批准的用户数据**。免费版零出站——**任何**向外部发出的请求都要先改 `docs/privacy.md` 并说明理由。
 16. **不得把秘密写入 Git**。
 17. **发布前必须完成 `docs/release.md` 的 Release Checklist**。
 18. **CSS 禁止 `!important`**（用户铁律）；改完 `grep -n "!important"` 自查为 0。
@@ -63,6 +66,8 @@
     判断依据已写进代码注释与 `docs/wordpress-org-compliance-report.md`。
 22. **文档与代码同步**：改了行为就改对应的 `docs/*.md`；`docs/*-report.md` 是审计记录，
     结论变了要重跑并更新，不允许留一份过期的 PASS。
+23. **不得把 Pro / 授权服务器的代码或配置放进本仓库**。需要跨产品共享的逻辑，走
+    `docs/free-extension-api.md` 的公开钩子；本仓库只认 `at8sec_is_pro` / `at8sec_pro_*` 这几个扩展点。
 
 ---
 
@@ -71,44 +76,32 @@
 | 不变量 | 说明 |
 |---|---|
 | 免费版可独立运行 | 免费版不连 AT8 服务器，无 outbound 请求；装上→激活→可用 |
-| Pro 失效不致命站点 | 服务器不可达走宽限期（`AT8SEC_PRO_GRACE_DAYS`），不是关功能 |
-| 授权判断只认服务端回包 | 已吊销的 key 拿不到下载链接，签名链接 30 分钟过期 |
-| 下载只能走签名路由 | `uploads/at8-packages/` 文件名随机 + Web Server 禁访 + sha256 校验 |
-| 审计日志不含密钥 | 只记 license id + 事件 + 主体 + 来源 IP |
-| 卸载不毁商业记录 | license-server 默认保留表；显式开启或 `AT8LS_PURGE_ON_UNINSTALL` 才删 |
-| **库内不存密钥明文** | `key_norm` 存 HMAC-SHA256（`wp_salt('auth')` 加盐），`license_key` 恒为空串，`key_hint` 只存末 5 位；完整密钥仅签发时展示一次 |
-| **免费功能不挂 `is_pro()`** | 该过滤器只决定「是否显示 Pro 入口」，不得用来开关任何免费功能 |
+| 免费功能不挂 `is_pro()` | 该过滤器只决定「是否显示 Pro 入口」，不得用来开关任何免费功能 |
+| 免费版零出站 | 无 HTTP 客户端、无远程资源、无遥测；见 `docs/external-service-report.md` |
+| 人机校验在本地 | 算术题由本站生成、存本站 transient 校验，不加载任何第三方脚本 |
+| 审计日志不含敏感值 | 只记事件 + 主体 + 来源 IP，不记密码 / 密钥 / 完整请求体 |
+| 锁定恢复入口常备 | `AT8SEC_DISABLE_CUSTOM_LOGIN` 必须始终可用，否则自定义登录路径失控时无法进后台 |
 
 ---
 
 ## 4. 常用命令
 
 ```bash
-# 语法检查（在测试站跑；本地 phpstudy 是 PHP 7.3.4，低于插件下限 7.4，不可用）
-php -l /www/wwwroot/wordpress.xmm.fan/wp-content/plugins/at8-license-server/includes/class-keys.php
-
 # 构建分发包（在仓库根执行；脚本自带 §65 六项审计，失败即非零退出）
 python at8sec-build-zips.py
 
-# 对发行 zip 用目标 PHP 逐文件 lint
-python at8sec-lint-zips.py
-# 在测试站对发行 zip 跑官方 Plugin Check
-python at8sec-plugin-check.py
+# 语法检查（在测试站跑；本地 phpstudy 是 PHP 7.3.4，低于插件下限 7.4，不可用）
+php -l /www/wwwroot/wordpress.xmm.fan/wp-content/plugins/at8-security/includes/class-waf.php
 
 # 测试（工作区内脚本，需测试站 SSH 配置 ~/.workbuddy/wpv.json）
-python at8ls-deploy.py        # 38/38  授权链路（会先部署授权服务器）
 python at8ls-spec.py          # 97/97  规范符合性
-python at8ls-publish.py       # 73/73  发布/下载/更新下发
 python at8sec-attack.py       # 30/30  对抗测试
-python at8sec-pro-http.py     # Pro 端到端
 
-# 单文件推送到测试站 + 服务器端 php -l（自动映射掉 free/ pro/ license-server/ 分组层）
+# 单文件推送到测试站 + 服务器端 php -l
 python at8sec-push.py free/at8-security/at8-security.php
-# 跑一次性探针
-python at8ls-run.py at8ls-tests/i18n-probe.php
 
 # CSS 自查
-grep -rn "!important" free pro license-server --include="*.css"
+grep -rn "!important" free --include="*.css"
 ```
 
 ---

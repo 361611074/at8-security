@@ -1,9 +1,11 @@
 # Third-Party Licenses
 
-本文件登记 AT8 安全产品线三个插件里**所有非自研代码**的授权情况。
+本文件登记**免费版 `at8-security`** 里**所有非自研代码**的授权情况。
 
 规范 §7 要求逐项记录 `Library / Version / License / Source / Used Files / GPL Compatibility`。
 规范同时规定：**Free ZIP 中不能包含许可证不明的第三方代码。**
+
+> 商业附加组件与授权服务器已迁至各自独立仓库，其依赖登记见那边的同名文件。
 
 ---
 
@@ -11,8 +13,7 @@
 
 **没有第三方代码。**
 
-三个分发包（`at8-security` / `at8-security-pro` / `at8-license-server`）里的每一个文件都是自研的，
-或由本项目自己的工具生成。
+免费版分发包（`at8-security`）里的每一个文件都是自研的，或由本项目自己的工具生成。
 
 | Library | Version | License | Source | Used Files | GPL Compatibility |
 |---|---|---|---|---|---|

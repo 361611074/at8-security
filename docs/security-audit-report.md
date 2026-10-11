@@ -8,6 +8,10 @@
 
 做法见 `docs/security.md`；本文件是**实测记录**。
 
+> **范围说明（2026-10-11）**：本报告同时覆盖 `at8-security-pro` 与 `at8-license-server`。
+> 这两个产品已迁至各自独立仓库（`at8-security-pro`、`at8-license-server-v2`），本仓库只保留免费版
+> `at8-security`；报告中对它们的记述作为**历史审计记录**保留，其代码与后续变更以各自仓库为准。
+
 ---
 
 ## 结论

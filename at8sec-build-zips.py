@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Build the three installable zips, then audit them.
+"""Build the free plugin's installable zip, then audit it.
+
+This repository carries the free plugin only. The Pro add-on and the licence
+server are separate repositories, so there is nothing else to package here —
+the build targets are declared in BUILDS and there is exactly one.
 
 Two jobs, in this order:
 
-  1. Package each plugin from source into dist/, with the plugin folder as the
+  1. Package the plugin from source into dist/, with the plugin folder as the
      top-level directory of the zip — a zip whose first path segment is not the
      plugin slug is not installable, and that failure looks like a corrupt
      download rather than a packaging mistake.
 
-  2. Audit every zip it produced, against the rules in AT8-WordPress-商业产品
+  2. Audit the zip it produced, against the rules in AT8-WordPress-商业产品
      通用架构规范-v2.0 §65: structure, forbidden file names, forbidden strings,
      secrets, licence declarations and PHP syntax.
 
@@ -33,8 +37,7 @@ Design notes that exist because the alternative bit us:
     to whoever works on the code, not to whoever installs it.
 
 Usage:
-    python at8sec-build-zips.py                # build and audit all three
-    python at8sec-build-zips.py --only free    # one of free / pro / server
+    python at8sec-build-zips.py                # build and audit the free plugin
     python at8sec-build-zips.py --php C:\\php\\php.exe
 """
 import argparse
@@ -53,13 +56,12 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DIST = os.path.join(ROOT, "dist")
 
-# Each build: a label, the source directory, and whether it is the copy that
-# goes to the WordPress.org directory. The third flag is what lets the audit
-# apply the free/pro isolation rules to exactly one of the three.
+# Each build: a label and the source directory. The free/pro isolation rules in
+# FREE_ISOLATION_RULES are applied to every zip this repository produces, because
+# every zip this repository produces is the free plugin — the Pro add-on and the
+# licence server live in their own repositories and are not built from here.
 BUILDS = [
-    ("free", os.path.join(ROOT, "free", "at8-security"), True),
-    ("pro", os.path.join(ROOT, "pro", "at8-security-pro"), False),
-    ("server", os.path.join(ROOT, "license-server", "at8-license-server"), False),
+    ("free", os.path.join(ROOT, "free", "at8-security")),
 ]
 
 # Never inside a distributed zip. Two groups: things that are not the plugin at
@@ -233,22 +235,26 @@ def read_text(zf, name):
         return None
 
 
-def check_strings(zf, is_free):
-    """Forbidden code patterns, and licence declarations that cannot ship."""
+def check_strings(zf):
+    """Forbidden code patterns, and licence declarations that cannot ship.
+
+    The free/pro isolation rules always apply: everything built from this
+    repository is the free plugin, and the free plugin must not carry a single
+    line of the add-on's namespace, slug or licence-server internals.
+    """
     problems = []
 
-    if is_free:
-        for name in zf.namelist():
-            if not name.endswith((".php", ".js", ".css", ".json")):
-                continue
-            text = read_text(zf, name)
-            if text is None:
-                continue
-            for pattern, why in FREE_ISOLATION_RULES:
-                for m in re.finditer(pattern, text):
-                    line = text[:m.start()].count("\n") + 1
-                    problems.append("%s:%d carries %s (%r)"
-                                    % (name, line, why, m.group(0)))
+    for name in zf.namelist():
+        if not name.endswith((".php", ".js", ".css", ".json")):
+            continue
+        text = read_text(zf, name)
+        if text is None:
+            continue
+        for pattern, why in FREE_ISOLATION_RULES:
+            for m in re.finditer(pattern, text):
+                line = text[:m.start()].count("\n") + 1
+                problems.append("%s:%d carries %s (%r)"
+                                % (name, line, why, m.group(0)))
 
     for name in zf.namelist():
         if not name.endswith((".php", ".txt", ".md")):
@@ -381,14 +387,14 @@ def minimum_php(src):
 
 # --------------------------------------------------------------------------
 
-def audit(target, slug, src, is_free, php):
+def audit(target, slug, src, php):
     """Run all six checks over one built zip."""
     result = {"file": os.path.basename(target), "checks": {}, "problems": [], "deferred": []}
 
     with zipfile.ZipFile(target) as zf:
         result["checks"]["structure"] = check_structure(zf, slug)
         result["checks"]["forbidden files"] = check_paths(zf)
-        result["checks"]["forbidden strings"] = check_strings(zf, is_free)
+        result["checks"]["forbidden strings"] = check_strings(zf)
         result["checks"]["secrets"] = check_secrets(zf)
         result["checks"]["licence"] = check_licence(zf, slug)
 
@@ -408,13 +414,11 @@ def audit(target, slug, src, is_free, php):
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--only", choices=[b[0] for b in BUILDS],
-                        help="build a single plugin")
     parser.add_argument("--php", help="PHP binary to lint with")
     args = parser.parse_args()
 
     php = find_php(args.php)
-    builds = [b for b in BUILDS if not args.only or b[0] == args.only]
+    builds = BUILDS
 
     # Stale zips from an earlier version sit in the same directory and get picked
     # up by whoever is looking for "the zip". Clear them first.
@@ -425,13 +429,13 @@ def main():
 
     report = {"builds": [], "php": php or "", "passed": True}
 
-    for label, src, is_free in builds:
+    for label, src in builds:
         slug = os.path.basename(src)
         version = version_of(src)
         target = os.path.join(DIST, "%s-%s.zip" % (slug, version))
 
         built = build(src, target)
-        audited = audit(target, slug, src, is_free, php)
+        audited = audit(target, slug, src, php)
         audited.update(built)
         audited["label"] = label
         audited["version"] = version

@@ -1,9 +1,18 @@
+# 构建产物（本地构建，不入库）
 dist/
+__pycache__/
+*.pyc
+
+# 本地备份快照
 .backups/
+
+# 分发包
 *.zip
 *.tar.gz
-.git/
+
 # 旧版 1.0.4 项目遗留，不入库
-at8-security/
-nginx增强规则.txt
-审查报告-1.0.4.md
+# 注意前导斜杠：写成 `at8-security/` 会连 `free/at8-security/` 一起忽略，
+# 导致 free 插件自己的 AGENTS.md 被静默排除在版本管理之外。
+/at8-security/
+/nginx增强规则.txt
+/审查报告-1.0.4.md
